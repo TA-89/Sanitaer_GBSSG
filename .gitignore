@@ -1,0 +1,12 @@
+# Arbeitsdateien der Extraktions-Skripte (nicht für die Webseite nötig)
+data/_extract/
+
+# Schullehrplan-PDF (nur intern für die Analyse, wird nicht verlinkt)
+pdfs/schullehrplan.pdf
+
+# Betriebssystem / Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*~

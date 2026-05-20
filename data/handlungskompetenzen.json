@@ -1,0 +1,100 @@
+{
+  "version": "2.0.0",
+  "stand": "2026-05-19",
+  "quelle": "Schullehrplan Sanitärinstallateurin/Sanitärinstallateur EFZ, Berufsnummer 47706, Stand 1. Januar 2020 (suissetec)",
+  "hinweis": "7 Handlungsfelder mit 34 Handlungskompetenzen. Codes wie '1.1', '7.2' entsprechen den offiziellen Bildungsplan-Codes. Die Schul-Lernaufträge der GBS haben eigene Nummern und werden über das Feld 'handlungskompetenzen' im Auftrags-Manifest verknüpft.",
+  "handlungsfelder": [
+    {
+      "code": "1",
+      "titel": "Planungsarbeiten und Arbeitsvorbereitung",
+      "kurz": "Pläne, Werkstattplanung, Arbeitsplatz, Werkzeuge",
+      "farbe": "#7BA7B5",
+      "kompetenzen": [
+        { "code": "1.1", "titel": "Einfache Installationspläne erstellen", "kurz": "Installationspläne planen und zeichnen, Rohrweiten bestimmen, Normen und Richtlinien anwenden." },
+        { "code": "1.2", "titel": "Arbeitsablauf bestimmen und Arbeiten auf der Baustelle absprechen", "kurz": "Bauablauf, Schnittstellen zu anderen Gewerken, Bauleitung und Fachpersonen." },
+        { "code": "1.3", "titel": "Werkstattplan erstellen", "kurz": "Isometrische Werkstattpläne, X- und Z-Mass-Methode, Stücklisten." },
+        { "code": "1.4", "titel": "Detailplan erstellen", "kurz": "Detaillierte Ausführungspläne für komplexe Installationen." },
+        { "code": "1.5", "titel": "Vorwand planen", "kurz": "Vorwand-Konstruktionen unter Berücksichtigung von Schall- und Brandschutz planen." },
+        { "code": "1.6", "titel": "Arbeitsplatz einrichten und sichern", "kurz": "PSA, Baustellensicherung, Gefahren auf Baustelle und in Werkstatt." },
+        { "code": "1.7", "titel": "Werkzeuge und Maschinen unterhalten", "kurz": "Wartung, Reparatur, Elektrosicherheit von Werkzeugen und Maschinen." }
+      ]
+    },
+    {
+      "code": "2",
+      "titel": "Trinkwasserleitungen",
+      "kurz": "Trinkwasserleitungen demontieren, vorfabrizieren, montieren, prüfen, dämmen und in Betrieb nehmen",
+      "farbe": "#4C7A8A",
+      "kompetenzen": [
+        { "code": "2.1", "titel": "Trinkwasserleitungen demontieren", "kurz": "Demontage im Sanierungs- und Umbaukontext, Provisorien, Hygiene." },
+        { "code": "2.2", "titel": "Trinkwasserleitungen vorfabrizieren", "kurz": "Materialien, Verbindungstechniken, Armaturengruppen, Befestigungen." },
+        { "code": "2.3", "titel": "Trinkwasserleitungen montieren", "kurz": "Montage vor Ort, Befestigungen, Hygiene, Wassereigenschaften, Trinkwassergewinnung und -versorgung." },
+        { "code": "2.4", "titel": "Dichtheitsprüfung bei Trinkwasserleitungen durchführen", "kurz": "Druck- und Dichtheitsprüfungen nach SVGW W3." },
+        { "code": "2.5", "titel": "Trinkwasserleitungen, Formstücke und Armaturen dämmen", "kurz": "Wärme- und Schalldämmung, Materialwahl, Anwendung Normen." },
+        { "code": "2.6", "titel": "Trinkwasserleitungen in Betrieb nehmen", "kurz": "Spülung, Desinfektion, Inbetriebnahme nach SVGW-Richtlinie W3." }
+      ]
+    },
+    {
+      "code": "3",
+      "titel": "Erdgasleitungen",
+      "kurz": "Erdgasleitungen demontieren, vorfabrizieren, montieren, prüfen und in Betrieb nehmen",
+      "farbe": "#C9956B",
+      "kompetenzen": [
+        { "code": "3.1", "titel": "Erdgasleitungen demontieren", "kurz": "Demontage von Erdgasleitungen, Sicherheitsmassnahmen, Vorschriften." },
+        { "code": "3.2", "titel": "Erdgasleitungen vorfabrizieren", "kurz": "Materialwahl, Verbindungssysteme, Vorbereitung in der Werkstatt." },
+        { "code": "3.3", "titel": "Erdgasleitungen montieren", "kurz": "Montage nach SVGW-Richtlinie G1, Befestigungen, Sicherheit." },
+        { "code": "3.4", "titel": "Druckprüfung bei Erdgasleitungen durchführen", "kurz": "Dichtheits- und Druckprüfungen, Protokollierung." },
+        { "code": "3.5", "titel": "Erdgasleitungen in Betrieb nehmen", "kurz": "Inbetriebnahme, Spülung, Übergabe an Kunden." }
+      ]
+    },
+    {
+      "code": "4",
+      "titel": "Entsorgungsleitungen",
+      "kurz": "Abwasser- und Entsorgungsleitungen vorfabrizieren, montieren, prüfen und dämmen",
+      "farbe": "#9A8B73",
+      "kompetenzen": [
+        { "code": "4.1", "titel": "Entsorgungsleitungen demontieren", "kurz": "Demontage von Abwasser- und Entsorgungsleitungen im Sanierungs- und Umbaukontext." },
+        { "code": "4.2", "titel": "Entsorgungsleitungen vorfabrizieren", "kurz": "Rohrmaterialien, Verbindungstechniken (Spiegelschweissen, Steckmuffen), Vorbereitung." },
+        { "code": "4.3", "titel": "Entsorgungsleitungen montieren", "kurz": "Montage von Abwasserleitungen, Befestigungen, Gefälle, Dimensionierung." },
+        { "code": "4.4", "titel": "Dichtheitsprüfung bei erdverlegten Entsorgungsleitungen durchführen", "kurz": "Dichtheitsprüfungen bei erdverlegten Leitungen." },
+        { "code": "4.5", "titel": "Entsorgungsleitungen dämmen", "kurz": "Schall- und Wärmedämmung von Entsorgungsleitungen." }
+      ]
+    },
+    {
+      "code": "5",
+      "titel": "Vorwände",
+      "kurz": "Vorwände vorfabrizieren und montieren",
+      "farbe": "#B89472",
+      "kompetenzen": [
+        { "code": "5.1", "titel": "Vorwände vorfabrizieren", "kurz": "Vorfertigung von Vorwandkonstruktionen in der Werkstatt." },
+        { "code": "5.2", "titel": "Vorwände montieren", "kurz": "Montage von Vorwänden, Schall- und Brandschutz, Apparate-Vorbereitung." }
+      ]
+    },
+    {
+      "code": "6",
+      "titel": "Apparate und sanitäre Anlagen",
+      "kurz": "Sanitärapparate, Solaranlagen, Lüftungsanlagen, Wartung und Service",
+      "farbe": "#A57E5A",
+      "kompetenzen": [
+        { "code": "6.1", "titel": "Apparate, Entnahmearmaturen und Garnituren demontieren", "kurz": "Demontage von Sanitärapparaten im Sanierungskontext." },
+        { "code": "6.2", "titel": "Apparate, Entnahmearmaturen und Garnituren montieren", "kurz": "Montage von Sanitärapparaten, Armaturen, Garnituren; Platzbedarf und Achsabstände." },
+        { "code": "6.3", "titel": "Ver- und Entsorgungsapparate montieren", "kurz": "Montage von Versorgungs- und Entsorgungsapparaten (Pumpen, Hebeanlagen)." },
+        { "code": "6.4", "titel": "Solaranlagen montieren", "kurz": "Thermische Solaranlagen und Photovoltaik, Aufbau, Funktion, Regelung." },
+        { "code": "6.5", "titel": "Kleinlüftungsanlagen montieren", "kurz": "Lüftungsanlagen für Wohn- und Sanitärräume." },
+        { "code": "6.6", "titel": "Wartungsarbeiten ausführen", "kurz": "Wartung von sanitären Anlagen, Werterhalt und Funktionssicherheit." },
+        { "code": "6.7", "titel": "Servicearbeiten ausführen", "kurz": "Reparaturen, Ersatzteilbestellung, Kundenservice." }
+      ]
+    },
+    {
+      "code": "7",
+      "titel": "Übergreifende Tätigkeiten und Auftragsabschluss",
+      "kurz": "Abfälle, Rapporte, Installationskontrolle, Übergabe",
+      "farbe": "#6B91A0",
+      "kompetenzen": [
+        { "code": "7.1", "titel": "Abfälle trennen und entsorgen", "kurz": "Recycling, Sonderabfälle, Asbest, Umweltvorschriften." },
+        { "code": "7.2", "titel": "Rapporte erstellen", "kurz": "Arbeits-, Stunden-, Regie- und Materialrapporte." },
+        { "code": "7.3", "titel": "Installation kontrollieren und Montageunterlagen aktualisieren", "kurz": "Kontrolle der ausgeführten Installation, Aktualisierung der Pläne." },
+        { "code": "7.4", "titel": "Der Kundin oder dem Kunden das Werk übergeben", "kurz": "Übergabe, Einweisung, Werkabnahme, Übergabeprotokoll." }
+      ]
+    }
+  ]
+}
