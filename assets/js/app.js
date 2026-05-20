@@ -380,7 +380,7 @@ function renderHome() {
         </div>
       </div>
       <div class="hero-media">
-        <img src="assets/img/hero.jpg" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" />
+        <img src="assets/img/hero.png" alt="Sanitär-Armatur mit Wasserstrahl" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" />
         <div class="hero-media-fallback" style="display:none">Bild folgt</div>
       </div>
     </section>
@@ -452,17 +452,15 @@ function renderSemesterList() {
   const grid = el(`<div class="sem-grid"></div>`);
   state.data.semester.forEach((s) => {
     const count = auftraegeForSemester(s.nummer).length;
-    const themen = (s.themenbloecke || []).slice(0, 3);
+    const themen = (s.themenbloecke || []).join(" · ");
     grid.appendChild(el(`
       <a class="sem-card" href="#/semester/${s.nummer}" aria-label="${escapeHtml(s.titel)}">
-        <div class="num">${s.nummer}</div>
-        <h3>${escapeHtml(s.titel)}</h3>
-        <p class="kurz">${escapeHtml(s.kurz)}</p>
-        <div class="pill-row">${themen.map((t) => `<span class="pill pill-thema">${escapeHtml(t)}</span>`).join("")}</div>
-        <div class="meta">
-          <span>${count} Aufträge</span>
-          <span>Beginn ${escapeHtml(s.schulbeginn)}</span>
+        <div class="sem-card-head">
+          <span class="num">${s.nummer}</span>
+          <span class="sem-count">${count} Aufträge</span>
         </div>
+        <h3>${escapeHtml(s.titel)}</h3>
+        <p class="sem-themen">${escapeHtml(themen)}</p>
       </a>
     `));
   });
@@ -1323,14 +1321,8 @@ function renderLernpfad() {
   v.appendChild(el(`
     <header class="section-head">
       <div>
-        <h1>Lernpfad</h1>
-        <p>Alle ${state.data.aufträge.length} Lernaufträge vom 1. bis zum 8. Semester. Klick auf ein Semester, um die Aufträge zu sehen.</p>
-        <p style="margin-top:6px; font-size:0.85rem; color:var(--ink-quiet);">
-          ${hatEchteReihenfolge
-            ? `Reihenfolge gemäss Master-Excels${state.reihenfolge?.stand ? " (Stand " + escapeHtml(state.reihenfolge.stand) + ")" : ""}.`
-            : "Reihenfolge nach Auftragsnummer (Excel-Reihenfolge noch nicht geladen)."
-          }
-        </p>
+        <h1>Chronologie</h1>
+        <p>Alle ${state.data.aufträge.length} Lernaufträge in der zeitlichen Reihenfolge — vom 1. bis zum 8. Semester. Klick auf ein Semester, um die Aufträge zu sehen.</p>
       </div>
       <button id="pfad-toggle-all" class="btn btn-ghost" type="button">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="margin-right:4px"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1423,19 +1415,16 @@ function renderLernpfad() {
           <button class="pfad-sem-header" type="button" aria-expanded="${isOpen}">
             <div class="pfad-sem-bubble" style="background:${pastel}; color:${deep};">
               <span class="pfad-sem-num">${s.sem.nummer}</span>
-              <span class="pfad-sem-label">Sem</span>
             </div>
             <div class="pfad-sem-info">
               <span class="pfad-sem-lj" style="color:${deep};">${lehrjahr}. Lehrjahr</span>
               <h2>${escapeHtml(s.sem.titel)}</h2>
-              <p>${escapeHtml(s.sem.kurz)}</p>
-              <div class="pfad-sem-pills">
-                ${s.hauptthemen.map((t) => `<span class="pill pill-thema">${escapeHtml(t)}</span>`).join("")}
-                <span class="pill" style="background:${pastel}; color:${deep};">${s.aufträge.length} Aufträge</span>
-              </div>
             </div>
-            <div class="pfad-sem-toggle" aria-hidden="true" style="background:${pastel}; color:${deep};">
-              <svg viewBox="0 0 24 24" width="22" height="22"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="pfad-sem-meta">
+              <span class="pfad-sem-count">${s.aufträge.length} Aufträge</span>
+              <div class="pfad-sem-toggle" aria-hidden="true" style="background:${pastel}; color:${deep};">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
             </div>
           </button>
           <div class="pfad-sem-aufs" ${isOpen ? "" : "hidden"}></div>

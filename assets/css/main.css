@@ -277,6 +277,7 @@ p { margin: 0 0 var(--space-4); color: var(--ink-soft); }
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
+  object-position: center right;
   display: block;
 }
 .hero-media .hero-media-fallback {
@@ -341,41 +342,40 @@ p { margin: 0 0 var(--space-4); color: var(--ink-soft); }
    Semester-Karten (Grid)
    ========================================================================== */
 .sem-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--space-4);
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--space-3);
 }
 .sem-card {
-  display: flex; flex-direction: column; gap: var(--space-3);
+  display: flex; flex-direction: column; gap: var(--space-2);
   background: var(--paper);
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: var(--space-5);
+  padding: var(--space-4);
   text-decoration: none; color: inherit;
-  transition: transform .12s, box-shadow .12s, border-color .12s;
-  position: relative;
-  overflow: hidden;
+  transition: border-color .12s, box-shadow .12s;
 }
 .sem-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-2);
-  border-color: var(--sand-strong);
+  box-shadow: var(--shadow-1);
+  border-color: var(--water);
   text-decoration: none;
+}
+.sem-card-head {
+  display: flex; align-items: baseline; justify-content: space-between;
 }
 .sem-card .num {
   font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 3rem; line-height: 1;
+  font-weight: 700;
+  font-size: 2rem; line-height: 1;
   color: var(--water-deep);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
-.sem-card h3 { margin: 0; font-size: 1.05rem; }
-.sem-card .kurz { color: var(--ink-soft); font-size: 0.92rem; margin: 0; }
-.sem-card .meta {
-  margin-top: auto;
-  display: flex; gap: var(--space-3);
-  color: var(--ink-quiet); font-size: 0.85rem;
+.sem-card .sem-count {
+  font-size: 0.78rem; color: var(--ink-quiet);
 }
-.sem-card .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.sem-card h3 { margin: 0; font-size: 0.98rem; font-weight: 600; line-height: 1.25; }
+.sem-card .sem-themen {
+  color: var(--ink-quiet); font-size: 0.82rem; margin: 0; line-height: 1.45;
+}
 
 /* ==========================================================================
    Pills / Badges
@@ -958,36 +958,22 @@ mark { background: #FBE8C4; color: var(--ink); padding: 0 2px; border-radius: 3p
   margin: var(--space-7) 0 var(--space-6);
 }
 .pfad-sem-bubble {
-  width: 72px; height: 72px; border-radius: 50%;
+  width: 48px; height: 48px; border-radius: 10px;
   flex-shrink: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  color: #fff;
+  display: grid; place-items: center;
   font-family: var(--font-display);
-  font-weight: 600;
-  box-shadow:
-    0 0 0 6px rgba(255, 255, 255, 0.8),
-    0 0 0 10px rgba(124, 167, 181, 0.18);
+  font-weight: 700;
 }
 .pfad-sem-bubble .pfad-sem-num {
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   line-height: 1;
 }
-.pfad-sem-bubble .pfad-sem-label {
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.85;
-  margin-top: 2px;
-}
+.pfad-sem-info { display: flex; flex-direction: column; gap: 1px; }
 .pfad-sem-info h2 {
-  margin: 0 0 4px;
-  font-size: 1.2rem;
-}
-.pfad-sem-info p {
   margin: 0;
-  color: var(--ink-soft);
-  font-size: 0.92rem;
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 /* ----------------------------------------------------------------------------
@@ -1002,21 +988,22 @@ mark { background: #FBE8C4; color: var(--ink); padding: 0 2px; border-radius: 3p
 .pfad-sem-header {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: var(--space-4);
+  gap: var(--space-3);
   align-items: center;
   width: 100%;
   background: var(--paper);
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--border);
   border-left: 4px solid var(--sem-color);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
   text-align: left;
   cursor: pointer;
   transition: background .12s, box-shadow .12s, border-color .12s;
-  box-shadow: var(--shadow-1);
   font: inherit;
   color: inherit;
 }
+.pfad-sem-meta { display: flex; align-items: center; gap: var(--space-3); }
+.pfad-sem-count { font-size: 0.8rem; color: var(--ink-quiet); white-space: nowrap; }
 .pfad-sem-header:hover {
   background: color-mix(in srgb, var(--sem-color) 6%, var(--paper));
   box-shadow: var(--shadow-2);
