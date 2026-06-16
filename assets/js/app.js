@@ -689,16 +689,20 @@ function renderAuftrag({ id }) {
   const sem = semByNum(a.semester);
   const v = $("#view");
 
+  const hkCodes = a.handlungskompetenzen || [];
+  const accentColor = hkByCode(hkCodes[0])?.handlungsfeld?.farbe || "var(--water-deep)";
+
   v.appendChild(el(`
     <p class="breadcrumb">
-      <a href="#/semester">Semester</a> ·
-      <a href="#/semester/${a.semester}">${escapeHtml(sem?.titel || "")}</a> ·
+      <a href="#/">Übersicht</a> ·
+      ${escapeHtml(sem?.titel || "")} ·
       ${escapeHtml(a.auftragNummer)}
     </p>
 
-    <article class="detail">
-      <div>
-        <div class="auf-preview" id="auf-preview-card" role="button" tabindex="0" aria-label="PDF öffnen">
+    <article class="auf2">
+      <!-- Grosses Vorschaubild -->
+      <div class="auf2-media">
+        <div class="auf-preview auf-preview-xl" id="auf-preview-card" role="button" tabindex="0" aria-label="PDF öffnen und blättern">
           <span class="auf-num">${escapeHtml(a.auftragNummer)}</span>
           <div class="sheet">
             <div class="line title"></div>
@@ -706,50 +710,62 @@ function renderAuftrag({ id }) {
             <div class="line"></div>
             <div class="line"></div>
             <div class="line short"></div>
-            <div class="line water" style="background:${(hkByCode((a.handlungskompetenzen||[])[0])?.handlungsfeld?.farbe)||"var(--water-deep)"};margin-top:auto"></div>
+            <div class="line water" style="background:${accentColor};margin-top:auto"></div>
+          </div>
+          <div class="auf-preview-play" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
           </div>
         </div>
-        <div class="cta-row">
-          <button class="btn btn-primary" id="open-pdf">Auftrag ansehen</button>
-        </div>
+        <button class="btn btn-primary auf2-open" id="open-pdf">Auftrag ansehen &amp; blättern</button>
       </div>
 
-      <div>
-        <div class="meta-row">
-          ${pillRow(a)}
-          ${a.schultage ? `<span class="pill">${a.schultage} Schultage</span>` : ""}
-          ${a.lektionen ? `<span class="pill">${a.lektionen} Lektionen</span>` : ""}
+      <!-- Kompakte Info -->
+      <div class="auf2-info">
+        <div class="auf2-tags">
+          <span class="auf2-tag auf2-tag-sem">${a.semester}. Semester</span>
+          ${a.thema ? `<span class="auf2-tag">${escapeHtml(a.thema)}</span>` : ""}
+          ${hkCodes.map((c) => { const hk = hkByCode(c); const col = hk?.handlungsfeld?.farbe || "var(--water)"; return `<span class="auf2-tag auf2-tag-hk" style="--hk-color:${col}">HK ${escapeHtml(c)}</span>`; }).join("")}
         </div>
-        <h1><span class="auf-num-big">${escapeHtml(a.auftragNummer)}</span> &nbsp; ${escapeHtml(a.titel)}</h1>
-        <p class="lead">${escapeHtml(a.kurzbeschreibung || "")}</p>
+
+        <h1 class="auf2-title"><span class="auf2-num">${escapeHtml(a.auftragNummer)}</span> ${escapeHtml(a.titel)}</h1>
 
         ${(a.lernziele && a.lernziele.length) ? `
-          <h2 style="margin-top:24px">Lernziele</h2>
-          <ul class="lz-list">${a.lernziele.map((l)=>`<li>${escapeHtml(l)}</li>`).join("")}</ul>
-        ` : ""}
+          <div class="auf2-block">
+            <h2>Das lernst du</h2>
+            <ul class="auf2-goals">${a.lernziele.map((l)=>`<li>${escapeHtml(l)}</li>`).join("")}</ul>
+          </div>
+        ` : `<p class="auf2-lead">${escapeHtml(a.kurzbeschreibung || "")}</p>`}
 
-        ${(a.leistungsnachweise && a.leistungsnachweise.length) ? `
-          <h2 style="margin-top:24px">Leistungsnachweise</h2>
-          <ul class="lz-list">${a.leistungsnachweise.map((l)=>`<li>${escapeHtml(l)}</li>`).join("")}</ul>
-        ` : ""}
+        <button class="auf2-infobtn" id="auf2-infobtn" type="button" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5M12 7.5v.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Weitere Infos
+          <svg class="auf2-infochev" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
 
-        <h2 style="margin-top:24px">Details</h2>
-        <ul class="kv-list">
-          <li><span class="k">Semester</span><span class="v">${escapeHtml(sem?.titel || a.semester)}</span></li>
-          <li><span class="k">Thema</span><span class="v">${escapeHtml(a.thema || "—")}</span></li>
-          <li><span class="k">Kernbegriffe</span><span class="v">${(a.kernbegriffe||[]).map((k)=>`<span class="pill pill-thema">${escapeHtml(k)}</span>`).join(" ")}</span></li>
-          <li><span class="k">Handlungskompetenzen</span><span class="v">${(a.handlungskompetenzen||[]).map((c)=>{const hk=hkByCode(c);const color=hk?.handlungsfeld?.farbe||"var(--water)";return `<span class="pill pill-hk" style="--hk-color:${color}"><span class="pill-prefix">HK</span> ${escapeHtml(c)}${hk?" · "+escapeHtml(hk.titel):""}</span>`;}).join(" ") || "—"}</span></li>
-          ${(a.leistungszieleBFS||[]).length ? `<li><span class="k">Leistungsziele BFS</span><span class="v">${a.leistungszieleBFS.map((lz)=>`<span class="pill pill-lz">${escapeHtml(lz)}</span>`).join(" ")}</span></li>` : ""}
-          <li><span class="k">Stand</span><span class="v">${escapeHtml(a.zuletztAktualisiert || "—")}${a.titelStatus==="vorläufig"?` <span class="pill" title="Titel aus Master-Excel rekonstruiert">Titel vorläufig</span>`:""}</span></li>
-          <li><span class="k">Datei</span><span class="v"><code>${escapeHtml(a.pdfDateiname)}</code></span></li>
-        </ul>
+        <div class="auf2-details" id="auf2-details" hidden>
+          ${a.kurzbeschreibung && a.lernziele && a.lernziele.length ? `<p class="auf2-lead">${escapeHtml(a.kurzbeschreibung)}</p>` : ""}
+          ${(a.kernbegriffe||[]).length ? `
+            <div class="auf2-dl"><span class="auf2-dt">Kernbegriffe</span>
+              <span class="auf2-dd">${a.kernbegriffe.map((k)=>`<span class="pill pill-thema">${escapeHtml(k)}</span>`).join(" ")}</span></div>` : ""}
+          <div class="auf2-dl"><span class="auf2-dt">Handlungskompetenzen</span>
+            <span class="auf2-dd">${hkCodes.map((c)=>{const hk=hkByCode(c);const col=hk?.handlungsfeld?.farbe||"var(--water)";return `<span class="pill pill-hk" style="--hk-color:${col}"><span class="pill-prefix">HK</span> ${escapeHtml(c)}${hk?" · "+escapeHtml(hk.titel):""}</span>`;}).join(" ") || "—"}</span></div>
+          ${(a.leistungszieleBFS||[]).length ? `
+            <div class="auf2-dl"><span class="auf2-dt">Leistungsziele BFS</span>
+              <span class="auf2-dd">${a.leistungszieleBFS.map((lz)=>`<span class="pill pill-lz">${escapeHtml(lz)}</span>`).join(" ")}</span></div>` : ""}
+          ${(a.leistungsnachweise||[]).length ? `
+            <div class="auf2-dl"><span class="auf2-dt">Leistungsnachweise</span>
+              <span class="auf2-dd"><ul class="auf2-goals">${a.leistungsnachweise.map((l)=>`<li>${escapeHtml(l)}</li>`).join("")}</ul></span></div>` : ""}
+          <div class="auf2-dl"><span class="auf2-dt">Umfang</span>
+            <span class="auf2-dd">${a.schultage ? a.schultage + " Schultage" : ""}${a.schultage && a.lektionen ? " · " : ""}${a.lektionen ? a.lektionen + " Lektionen" : ""}</span></div>
+          <div class="auf2-dl"><span class="auf2-dt">Stand</span>
+            <span class="auf2-dd">${escapeHtml(a.zuletztAktualisiert || "—")}</span></div>
+        </div>
       </div>
     </article>
   `));
 
   pushRecent(a.id);
 
-  // Echte Vorschau auch für die Detail-Karte
   const detailPreview = $("#auf-preview-card");
   detailPreview.dataset.thumbId = a.id;
   detailPreview.dataset.thumbPdf = a.pdfPfad;
@@ -760,6 +776,17 @@ function renderAuftrag({ id }) {
   detailPreview.addEventListener("click", open);
   detailPreview.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+  });
+
+  // Info-Toggle
+  const infoBtn = $("#auf2-infobtn");
+  const infoPanel = $("#auf2-details");
+  infoBtn.addEventListener("click", () => {
+    const open = infoPanel.hasAttribute("hidden");
+    if (open) infoPanel.removeAttribute("hidden");
+    else infoPanel.setAttribute("hidden", "");
+    infoBtn.setAttribute("aria-expanded", String(open));
+    infoBtn.classList.toggle("is-open", open);
   });
 }
 
