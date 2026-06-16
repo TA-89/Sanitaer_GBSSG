@@ -374,211 +374,169 @@ function saveMosaikState(s) {
   try { localStorage.setItem(MOSAIK_FILTER_KEY, JSON.stringify(s)); } catch {}
 }
 
+const HOME_OPEN_KEY = "sanigbs:home-open:v1";
+function loadHomeOpen() {
+  try { return new Set(JSON.parse(localStorage.getItem(HOME_OPEN_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+function saveHomeOpen(set) {
+  try { localStorage.setItem(HOME_OPEN_KEY, JSON.stringify([...set])); } catch {}
+}
+
+// Aufträge eines Semesters in zeitlicher Reihenfolge
+function auftraegeSorted(semNum) {
+  const aufs = state.data.aufträge.filter((a) => a.semester === semNum);
+  const order = state.reihenfolge?.semester?.[String(semNum)];
+  if (order && order.length) {
+    const map = new Map(order.map((id, i) => [id, i]));
+    return aufs.sort((a, b) => (map.get(a.id) ?? 999) - (map.get(b.id) ?? 999));
+  }
+  return aufs.sort((a, b) => Number(a.auftragNummer.split(".")[1] || 0) - Number(b.auftragNummer.split(".")[1] || 0));
+}
+
 function renderHome() {
   const v = $("#view");
   const total = state.data.aufträge.length;
-  const persisted = loadMosaikState();
-  const filterSem = new Set(persisted.sem || []);
-  const filterThema = new Set(persisted.thema ? [persisted.thema] : []);
-  const filterHk = new Set(persisted.hk || []);
-  let viewMode = persisted.view || "mosaik";
-
-  const themen = Array.from(new Set(state.data.aufträge.map((a) => a.thema).filter(Boolean))).sort();
-  const hfs = state.hf.handlungsfelder;
+  const openSet = loadHomeOpen();
+  const allOpen = openSet.size >= state.data.semester.length;
 
   v.appendChild(el(`
-    <section class="entdecken">
-      <header class="entdecken-hero">
-        <div class="entdecken-hero-eyebrow">
-          <span class="entdecken-dot"></span>
+    <section class="home">
+      <!-- 1. Kompakter Hero -->
+      <header class="home-hero">
+        <div class="home-eyebrow">
+          <span class="home-dot"></span>
           GBS St. Gallen · Sanitärinstallateur/in EFZ
         </div>
-        <h1>Alle <span class="hero-num">${total}</span> Lernaufträge.<br><span class="hero-em">Auf einen Blick.</span></h1>
-        <p class="entdecken-hero-sub">Acht Semester, eine Übersicht. Filter unten nach Semester, Thema oder Handlungsfeld — oder tippe einen Begriff in die Schnellsuche.</p>
-
-        <div class="entdecken-search">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input id="entdecken-search-input" type="search" placeholder="Schnellsuche – Begriff eingeben, Enter drücken" autocomplete="off" />
-          <kbd>↵</kbd>
-        </div>
+        <h1>Deine Ausbildung,<br>von Anfang bis Ziel.</h1>
+        <p class="home-sub">Acht Semester, ${total} Lernaufträge. Klick auf ein Semester, um seine Aufträge zu öffnen.</p>
       </header>
 
-      <div class="entdecken-toolbar">
-        <div class="entdecken-filters" id="entdecken-filters"></div>
-        <div class="entdecken-mode" role="tablist" aria-label="Ansicht wechseln">
-          <button class="mode-btn ${viewMode === "mosaik" ? "is-active" : ""}" data-mode="mosaik" role="tab" aria-selected="${viewMode === "mosaik"}">
-            <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-            Mosaik
-          </button>
-          <button class="mode-btn ${viewMode === "chronologie" ? "is-active" : ""}" data-mode="chronologie" role="tab" aria-selected="${viewMode === "chronologie"}">
-            <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="6" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6h11M10 12h8M10 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            Chronologie
-          </button>
-        </div>
+      <!-- 2. Suche – prominent an zweiter Stelle -->
+      <div class="home-search">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="home-search-input" type="search" placeholder="Thema oder Begriff suchen – z. B. Solar, Z-Mass, Hygiene …" autocomplete="off" />
+        <button class="home-search-btn" id="home-search-btn" type="button">Suchen</button>
       </div>
 
-      <div class="entdecken-content" id="entdecken-content"></div>
+      <!-- 3. Lernpfad: 8 Semester, ausklappbar -->
+      <div class="home-pathhead">
+        <h2>Der Weg durch deine Lehre</h2>
+        <button id="home-toggle-all" class="ghostlink" type="button">${allOpen ? "Alle einklappen" : "Alle ausklappen"}</button>
+      </div>
+      <div class="lernweg" id="lernweg"></div>
     </section>
   `));
 
-  const filterBar = $("#entdecken-filters");
+  // ---- Lernweg rendern ----
+  const weg = $("#lernweg");
+  state.data.semester.forEach((s, idx) => {
+    const aufs = auftraegeSorted(s.nummer);
+    const isOpen = openSet.has(s.nummer);
+    const lj = Math.ceil(s.nummer / 2);
+    const color = pfadSemesterColor(s.nummer);
+    const deep = pfadSemesterDeep(s.nummer);
+    const isLast = idx === state.data.semester.length - 1;
 
-  const semGroup = el(`<div class="filter-group-chips" data-group="sem"><span class="filter-label">Semester</span></div>`);
-  for (let i = 1; i <= 8; i++) {
-    const active = filterSem.has(i);
-    semGroup.appendChild(el(`<button class="chip ${active ? "is-active" : ""}" data-sem="${i}" type="button">${i}</button>`));
-  }
-  filterBar.appendChild(semGroup);
+    const station = el(`
+      <div class="weg-station ${isOpen ? "is-open" : ""}" data-sem="${s.nummer}" style="--st-color:${color}; --st-deep:${deep};">
+        <div class="weg-line ${isLast ? "is-last" : ""}" aria-hidden="true"></div>
+        <button class="weg-head" type="button" aria-expanded="${isOpen}">
+          <span class="weg-node"><span class="weg-node-num">${s.nummer}</span></span>
+          <span class="weg-info">
+            <span class="weg-lj">${lj}. Lehrjahr</span>
+            <span class="weg-title">${escapeHtml(s.titel)}</span>
+          </span>
+          <span class="weg-meta">
+            <span class="weg-count">${aufs.length}</span>
+            <span class="weg-chev" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+          </span>
+        </button>
+        <div class="weg-body" ${isOpen ? "" : "hidden"}>
+          <div class="weg-grid"></div>
+        </div>
+      </div>
+    `);
 
-  const themaGroup = el(`<div class="filter-group-chips" data-group="thema"><span class="filter-label">Thema</span></div>`);
-  const themaSelect = el(`<select class="filter-select" id="filter-thema"><option value="">Alle</option>${themen.map((t) => `<option ${filterThema.has(t) ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}</select>`);
-  themaGroup.appendChild(themaSelect);
-  filterBar.appendChild(themaGroup);
-
-  const hkGroup = el(`<div class="filter-group-chips" data-group="hk"><span class="filter-label">Handlungsfeld</span></div>`);
-  hfs.forEach((hf) => {
-    const active = filterHk.has(hf.code);
-    hkGroup.appendChild(el(`<button class="chip chip-hk ${active ? "is-active" : ""}" data-hf="${hf.code}" type="button" title="${escapeHtml(hf.titel)}" style="--chip-color:${hf.farbe}">HF ${hf.code}</button>`));
+    const grid = station.querySelector(".weg-grid");
+    aufs.forEach((a, i) => {
+      const hk = (a.handlungskompetenzen || []).map((c) => hkByCode(c)).filter(Boolean);
+      const hf = hk[0]?.handlungsfeld;
+      grid.appendChild(el(`
+        <a class="tile" href="#/auftrag/${a.id}" style="--tile-delay:${i * 22}ms" aria-label="Auftrag ${escapeHtml(a.auftragNummer)} – ${escapeHtml(a.titel)}">
+          <div class="tile-num">${escapeHtml(a.auftragNummer)}</div>
+          <div class="tile-body">
+            <h3 class="tile-title">${escapeHtml(a.titel)}</h3>
+            ${a.thema ? `<span class="tile-thema">${escapeHtml(a.thema)}</span>` : ""}
+          </div>
+          ${hf ? `<div class="tile-hf"><span class="tile-hf-dot" style="background:${hf.farbe}" title="HF ${escapeHtml(hf.code)} · ${escapeHtml(hf.titel)}"></span></div>` : ""}
+        </a>
+      `));
+    });
+    weg.appendChild(station);
   });
-  filterBar.appendChild(hkGroup);
 
-  const resetBtn = el(`<button class="filter-reset" type="button">Zurücksetzen</button>`);
-  filterBar.appendChild(resetBtn);
-
-  const renderContent = () => {
-    const content = $("#entdecken-content");
-    content.innerHTML = "";
-    content.className = "entdecken-content " + (viewMode === "chronologie" ? "is-chrono" : "is-mosaik");
-
-    const filtered = state.data.aufträge.filter((a) => {
-      if (filterSem.size && !filterSem.has(a.semester)) return false;
-      if (filterThema.size && !filterThema.has(a.thema)) return false;
-      if (filterHk.size) {
-        const aufHfs = new Set((a.handlungskompetenzen || []).map((c) => c.split(".")[0]));
-        let match = false;
-        filterHk.forEach((hf) => { if (aufHfs.has(hf)) match = true; });
-        if (!match) return false;
-      }
-      return true;
-    });
-
-    const reihenfolge = state.reihenfolge?.semester || {};
-    const grouped = new Map();
-    state.data.semester.forEach((s) => grouped.set(s.nummer, []));
-    filtered.forEach((a) => { if (grouped.has(a.semester)) grouped.get(a.semester).push(a); });
-    grouped.forEach((aufs, semNum) => {
-      const order = reihenfolge[String(semNum)];
-      if (order && order.length) {
-        const map = new Map(order.map((id, i) => [id, i]));
-        aufs.sort((a, b) => (map.get(a.id) ?? 999) - (map.get(b.id) ?? 999));
-      } else {
-        aufs.sort((a, b) => Number(a.auftragNummer.split(".")[1] || 0) - Number(b.auftragNummer.split(".")[1] || 0));
-      }
-    });
-
-    if (filtered.length === 0) {
-      content.appendChild(el(`<div class="empty"><p>Keine Aufträge entsprechen den Filtern.</p><button class="btn btn-ghost" type="button" id="empty-reset">Filter zurücksetzen</button></div>`));
-      $("#empty-reset").addEventListener("click", () => resetBtn.click());
-      return;
-    }
-
-    state.data.semester.forEach((s) => {
-      const aufs = grouped.get(s.nummer) || [];
-      if (!aufs.length) return;
-      const lj = Math.ceil(s.nummer / 2);
-
-      const band = el(`
-        <section class="band" data-sem="${s.nummer}">
-          <header class="band-head">
-            <div class="band-num">${s.nummer}<span class="band-num-sep">/8</span></div>
-            <div class="band-info">
-              <div class="band-meta">${lj}. Lehrjahr · ${aufs.length} ${aufs.length === 1 ? "Auftrag" : "Aufträge"}</div>
-              <h2>${escapeHtml(s.titel)}</h2>
-            </div>
-          </header>
-          <div class="band-grid"></div>
-        </section>
-      `);
-      const grid = band.querySelector(".band-grid");
-      aufs.forEach((a, i) => {
-        const hk = (a.handlungskompetenzen || []).map((c) => hkByCode(c)).filter(Boolean);
-        const hf = hk[0]?.handlungsfeld;
-        grid.appendChild(el(`
-          <a class="tile" href="#/auftrag/${a.id}" style="--tile-delay:${i * 18}ms" aria-label="Auftrag ${escapeHtml(a.auftragNummer)} – ${escapeHtml(a.titel)}">
-            <div class="tile-num">${escapeHtml(a.auftragNummer)}</div>
-            <div class="tile-body">
-              <h3 class="tile-title">${escapeHtml(a.titel)}</h3>
-              ${a.thema ? `<span class="tile-thema">${escapeHtml(a.thema)}</span>` : ""}
-            </div>
-            ${hf ? `<div class="tile-hf"><span class="tile-hf-dot" style="background:${hf.farbe}" title="HF ${escapeHtml(hf.code)} · ${escapeHtml(hf.titel)}"></span></div>` : ""}
-          </a>
-        `));
-      });
-      content.appendChild(band);
+  // ---- Toggle einzelne Station ----
+  const replayTiles = (station) => {
+    station.querySelectorAll(".tile").forEach((t) => {
+      t.style.animation = "none";
+      void t.offsetHeight;
+      t.style.animation = "";
     });
   };
 
-  const persistFilters = () => saveMosaikState({
-    sem: [...filterSem],
-    thema: [...filterThema][0] || "",
-    hk: [...filterHk],
-    view: viewMode,
+  weg.addEventListener("click", (e) => {
+    const head = e.target.closest(".weg-head");
+    if (!head) return;
+    const station = head.closest(".weg-station");
+    const sem = Number(station.dataset.sem);
+    const body = station.querySelector(".weg-body");
+    const isOpenNow = !station.classList.contains("is-open");
+    station.classList.toggle("is-open", isOpenNow);
+    head.setAttribute("aria-expanded", String(isOpenNow));
+    if (isOpenNow) { body.removeAttribute("hidden"); replayTiles(station); }
+    else body.setAttribute("hidden", "");
+    const open = loadHomeOpen();
+    if (isOpenNow) open.add(sem); else open.delete(sem);
+    saveHomeOpen(open);
+    updateToggleAll();
   });
 
-  semGroup.addEventListener("click", (e) => {
-    const btn = e.target.closest(".chip[data-sem]");
-    if (!btn) return;
-    const num = Number(btn.dataset.sem);
-    if (filterSem.has(num)) filterSem.delete(num);
-    else filterSem.add(num);
-    btn.classList.toggle("is-active");
-    persistFilters(); renderContent();
-  });
+  const updateToggleAll = () => {
+    const open = loadHomeOpen();
+    const all = open.size >= state.data.semester.length;
+    $("#home-toggle-all").textContent = all ? "Alle einklappen" : "Alle ausklappen";
+  };
 
-  hkGroup.addEventListener("click", (e) => {
-    const btn = e.target.closest(".chip-hk[data-hf]");
-    if (!btn) return;
-    const code = btn.dataset.hf;
-    if (filterHk.has(code)) filterHk.delete(code);
-    else filterHk.add(code);
-    btn.classList.toggle("is-active");
-    persistFilters(); renderContent();
-  });
-
-  themaSelect.addEventListener("change", () => {
-    filterThema.clear();
-    if (themaSelect.value) filterThema.add(themaSelect.value);
-    persistFilters(); renderContent();
-  });
-
-  resetBtn.addEventListener("click", () => {
-    filterSem.clear(); filterThema.clear(); filterHk.clear();
-    semGroup.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
-    hkGroup.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
-    themaSelect.value = "";
-    persistFilters(); renderContent();
-  });
-
-  $$(".entdecken-mode .mode-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      viewMode = btn.dataset.mode;
-      $$(".entdecken-mode .mode-btn").forEach((b) => {
-        b.classList.toggle("is-active", b === btn);
-        b.setAttribute("aria-selected", b === btn ? "true" : "false");
-      });
-      persistFilters(); renderContent();
+  $("#home-toggle-all").addEventListener("click", () => {
+    const open = loadHomeOpen();
+    const all = open.size >= state.data.semester.length;
+    const next = new Set();
+    if (!all) state.data.semester.forEach((s) => next.add(s.nummer));
+    saveHomeOpen(next);
+    weg.querySelectorAll(".weg-station").forEach((station) => {
+      const sem = Number(station.dataset.sem);
+      const isOpen = next.has(sem);
+      station.classList.toggle("is-open", isOpen);
+      station.querySelector(".weg-head").setAttribute("aria-expanded", String(isOpen));
+      const body = station.querySelector(".weg-body");
+      if (isOpen) { body.removeAttribute("hidden"); replayTiles(station); }
+      else body.setAttribute("hidden", "");
     });
+    updateToggleAll();
   });
 
-  const searchInput = $("#entdecken-search-input");
-  searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const q = searchInput.value.trim();
-      if (q) location.hash = `#/suche?q=${encodeURIComponent(q)}`;
-    }
-  });
-
-  renderContent();
+  // ---- Suche ----
+  const searchInput = $("#home-search-input");
+  const doSearch = () => {
+    const q = searchInput.value.trim();
+    if (q) location.hash = `#/suche?q=${encodeURIComponent(q)}`;
+    else location.hash = "#/suche";
+  };
+  searchInput.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+  $("#home-search-btn").addEventListener("click", doSearch);
 }
 
 // ----- Semester-Übersicht (8 Karten)
@@ -806,17 +764,6 @@ function renderSearch({ q }) {
         </select>
       </div>
       <div class="filter-group">
-        <label for="s-hf">Handlungskompetenz</label>
-        <select id="s-hf">
-          <option value="">Alle</option>
-          ${state.hf.handlungsfelder.map((hf) => `
-            <optgroup label="${escapeHtml(hf.code)} – ${escapeHtml(hf.titel)}">
-              ${(hf.kompetenzen||[]).map((k) => `<option value="${k.code}">${k.code} – ${escapeHtml(k.titel)}</option>`).join("")}
-            </optgroup>
-          `).join("")}
-        </select>
-      </div>
-      <div class="filter-group">
         <label for="s-thema">Thema</label>
         <select id="s-thema">
           <option value="">Alle</option>
@@ -833,7 +780,6 @@ function renderSearch({ q }) {
   const runSearch = () => {
     const term = $("#search-input").value.trim();
     const fSem = $("#s-sem").value;
-    const fHf = $("#s-hf").value;
     const fThema = $("#s-thema").value;
 
     let results;
@@ -845,7 +791,6 @@ function renderSearch({ q }) {
     // Filter anwenden
     results = results.filter(({ item }) =>
       (!fSem || item.semester === Number(fSem)) &&
-      (!fHf || (item.handlungskompetenzen || []).includes(fHf)) &&
       (!fThema || item.thema === fThema)
     );
 
@@ -1006,10 +951,9 @@ function renderSearch({ q }) {
     }
   });
   $("#s-sem").addEventListener("change", runSearch);
-  $("#s-hf").addEventListener("change", runSearch);
   $("#s-thema").addEventListener("change", runSearch);
   $(".filter-clear").addEventListener("click", () => {
-    $("#s-sem").value = ""; $("#s-hf").value = ""; $("#s-thema").value = "";
+    $("#s-sem").value = ""; $("#s-thema").value = "";
     runSearch();
   });
 
