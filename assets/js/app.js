@@ -210,6 +210,28 @@ function ensureThumbObserver() {
       const pdfPath = elm.dataset.thumbPdf;
       if (!id || !pdfPath) return;
 
+      // Hochgeladenes PDF (IndexedDB) hat Vorrang – Vorschau neu rendern
+      const rec = await idbGetPdf(id);
+      if (rec && rec.blob) {
+        const cache = readThumbCache();
+        const cacheKey = `${id}@${rec.ts}`;
+        if (cache[cacheKey]?.url) {
+          applyThumbToElement(elm, cache[cacheKey].url);
+          return;
+        }
+        const blobUrl = URL.createObjectURL(rec.blob);
+        try {
+          const dataUrl = await renderThumbnail(blobUrl);
+          const c = readThumbCache();
+          // alte Caches für diese id entfernen
+          Object.keys(c).forEach((k) => { if (k === id || k.startsWith(id + "@")) delete c[k]; });
+          c[cacheKey] = { url: dataUrl, ts: Date.now() };
+          writeThumbCache(c);
+          applyThumbToElement(elm, dataUrl);
+        } catch {} finally { URL.revokeObjectURL(blobUrl); }
+        return;
+      }
+
       const cache = readThumbCache();
       if (cache[id]?.url) {
         applyThumbToElement(elm, cache[id].url);
@@ -1858,12 +1880,80 @@ function renderInfo() {
 }
 
 // ---------------------------------------------------------------------------
-// PDF-Viewer (PDF.js)
+// IndexedDB – ersetzte PDFs (Upload im Editor) lokal speichern
+// ---------------------------------------------------------------------------
+const PDF_DB_NAME = "sanigbs-pdfs";
+const PDF_STORE = "pdfs";
+let _pdfDb = null;
+function openPdfDb() {
+  if (_pdfDb) return Promise.resolve(_pdfDb);
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(PDF_DB_NAME, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(PDF_STORE)) db.createObjectStore(PDF_STORE);
+    };
+    req.onsuccess = () => { _pdfDb = req.result; resolve(_pdfDb); };
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbPutPdf(id, blob, meta) {
+  const db = await openPdfDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(PDF_STORE, "readwrite");
+    tx.objectStore(PDF_STORE).put({ blob, meta, ts: Date.now() }, id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbGetPdf(id) {
+  try {
+    const db = await openPdfDb();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(PDF_STORE, "readonly");
+      const r = tx.objectStore(PDF_STORE).get(id);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => reject(r.error);
+    });
+  } catch { return null; }
+}
+async function idbDeletePdf(id) {
+  const db = await openPdfDb();
+  return new Promise((resolve) => {
+    const tx = db.transaction(PDF_STORE, "readwrite");
+    tx.objectStore(PDF_STORE).delete(id);
+    tx.oncomplete = () => resolve();
+  });
+}
+async function idbListPdfIds() {
+  try {
+    const db = await openPdfDb();
+    return await new Promise((resolve) => {
+      const tx = db.transaction(PDF_STORE, "readonly");
+      const r = tx.objectStore(PDF_STORE).getAllKeys();
+      r.onsuccess = () => resolve(r.result || []);
+      r.onerror = () => resolve([]);
+    });
+  } catch { return []; }
+}
+
+// Liefert die zu verwendende PDF-Quelle: hochgeladenes (IndexedDB) oder Original-Pfad.
+async function resolvePdfSource(auftrag) {
+  const rec = await idbGetPdf(auftrag.id);
+  if (rec && rec.blob) {
+    return { url: URL.createObjectURL(rec.blob), isBlob: true, ts: rec.ts };
+  }
+  return { url: auftrag.pdfPfad, isBlob: false, ts: 0 };
+}
+
+// ---------------------------------------------------------------------------
+// PDF-Viewer mit Broschüren-Blättern (StPageFlip + PDF.js)
 // ---------------------------------------------------------------------------
 let pdfjs = null;
 let currentPdf = null;
-let currentPage = 1;
-let currentScale = 1.25;
+let currentFlip = null;
+let currentZoom = 1;
+let currentBlobUrl = null;
 
 async function ensurePdfJs() {
   if (pdfjs) return pdfjs;
@@ -1879,44 +1969,82 @@ async function openPdf(auftrag) {
   $("#pdf-pages").textContent = "…";
   $("#pdf-empty").hidden = false;
   $("#pdf-empty").textContent = "PDF wird geladen …";
+  const flipHost = $("#pdf-flip");
+  flipHost.innerHTML = "";
   modal.hidden = false;
   modal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
+  currentZoom = 1;
+  $("#pdf-stage").style.setProperty("--pdf-zoom", "1");
 
   try {
     const lib = await ensurePdfJs();
-    const loadingTask = lib.getDocument(auftrag.pdfPfad);
-    currentPdf = await loadingTask.promise;
-    currentPage = 1;
-    currentScale = window.innerWidth < 700 ? 1.0 : 1.25;
-    $("#pdf-pages").textContent = currentPdf.numPages;
+    const src = await resolvePdfSource(auftrag);
+    if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+    if (src.isBlob) currentBlobUrl = src.url;
+
+    currentPdf = await lib.getDocument(src.url).promise;
+    const numPages = currentPdf.numPages;
+    $("#pdf-pages").textContent = numPages;
+
+    // Alle Seiten als Bilder rendern (gute Auflösung für scharfes Blättern)
+    const page1 = await currentPdf.getPage(1);
+    const base = page1.getViewport({ scale: 1 });
+    const ratio = base.height / base.width;
+    const RENDER_W = Math.min(1000, Math.round(base.width * 1.6));
+    const images = [];
+    for (let p = 1; p <= numPages; p++) {
+      const page = await currentPdf.getPage(p);
+      const scale = RENDER_W / page.getViewport({ scale: 1 }).width;
+      const vp = page.getViewport({ scale });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(vp.width);
+      canvas.height = Math.floor(vp.height);
+      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+      images.push(canvas.toDataURL("image/jpeg", 0.82));
+    }
+
     $("#pdf-empty").hidden = true;
-    await renderPdfPage();
+
+    // Flip-Grösse aus Bühne berechnen
+    const stage = $("#pdf-stage");
+    const availH = stage.clientHeight - 24;
+    const availW = stage.clientWidth - 24;
+    let pageH = availH;
+    let pageW = pageH / ratio;
+    // bei Doppelseite max halbe Breite
+    const maxSingle = availW / (window.innerWidth >= 900 ? 2 : 1);
+    if (pageW > maxSingle) { pageW = maxSingle; pageH = pageW * ratio; }
+
+    const PageFlipCls = (window.St && window.St.PageFlip) || window.PageFlip;
+    if (!PageFlipCls) throw new Error("StPageFlip nicht geladen");
+    currentFlip = new PageFlipCls(flipHost, {
+      width: Math.round(pageW),
+      height: Math.round(pageH),
+      size: "stretch",
+      minWidth: 240, maxWidth: 1200,
+      minHeight: 320, maxHeight: 1700,
+      drawShadow: true,
+      flippingTime: 650,
+      usePortrait: window.innerWidth < 900,
+      showCover: false,
+      maxShadowOpacity: 0.4,
+      mobileScrollSupport: true,
+      clickEventForward: true,
+      useMouseEvents: true,
+    });
+    currentFlip.loadFromImages(images);
+    currentFlip.on("flip", (e) => {
+      $("#pdf-page").textContent = (e.data || 0) + 1;
+    });
   } catch (err) {
     $("#pdf-empty").hidden = false;
     $("#pdf-empty").innerHTML = `
       <strong>PDF konnte nicht geladen werden.</strong><br/>
-      <small>Erwarteter Pfad: <code>${escapeHtml(auftrag.pdfPfad)}</code></small><br/>
-      <small>Tipp: Mit <code>link-pdfs.ps1</code> die Original-PDFs einbinden.</small>
+      <small>Erwarteter Pfad: <code>${escapeHtml(auftrag.pdfPfad)}</code></small>
     `;
-    console.warn("PDF.js error", err);
+    console.warn("PDF.js / Flip error", err);
   }
-}
-
-async function renderPdfPage() {
-  if (!currentPdf) return;
-  const page = await currentPdf.getPage(currentPage);
-  const viewport = page.getViewport({ scale: currentScale });
-  const canvas = $("#pdf-canvas");
-  const ctx = canvas.getContext("2d");
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.floor(viewport.width * dpr);
-  canvas.height = Math.floor(viewport.height * dpr);
-  canvas.style.width = `${viewport.width}px`;
-  canvas.style.height = `${viewport.height}px`;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  await page.render({ canvasContext: ctx, viewport }).promise;
-  $("#pdf-page").textContent = currentPage;
 }
 
 function closePdf() {
@@ -1924,16 +2052,12 @@ function closePdf() {
   modal.hidden = true;
   modal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
-  if (currentPdf) {
-    currentPdf.cleanup?.();
-    currentPdf.destroy?.();
-    currentPdf = null;
-  }
-  const canvas = $("#pdf-canvas");
-  if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+  if (currentFlip) { try { currentFlip.destroy(); } catch {} currentFlip = null; }
+  if (currentPdf) { currentPdf.cleanup?.(); currentPdf.destroy?.(); currentPdf = null; }
+  if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
+  $("#pdf-flip").innerHTML = "";
 }
 
-// PDF-Modal-Events
 document.addEventListener("click", (e) => {
   const t = e.target;
   if (!(t instanceof Element)) return;
@@ -1953,16 +2077,14 @@ $("#pdf-next").addEventListener("click", () => nextPage());
 $("#pdf-zoom-in").addEventListener("click", () => zoomIn());
 $("#pdf-zoom-out").addEventListener("click", () => zoomOut());
 
-function nextPage() {
-  if (!currentPdf) return;
-  if (currentPage < currentPdf.numPages) { currentPage++; renderPdfPage(); }
+function nextPage() { if (currentFlip) currentFlip.flipNext(); }
+function prevPage() { if (currentFlip) currentFlip.flipPrev(); }
+function zoomIn() { setZoom(Math.min(2.2, currentZoom + 0.2)); }
+function zoomOut() { setZoom(Math.max(0.6, currentZoom - 0.2)); }
+function setZoom(z) {
+  currentZoom = z;
+  $("#pdf-flip").style.transform = `scale(${z})`;
 }
-function prevPage() {
-  if (!currentPdf) return;
-  if (currentPage > 1) { currentPage--; renderPdfPage(); }
-}
-function zoomIn() { if (!currentPdf) return; currentScale = Math.min(3.0, currentScale + 0.25); renderPdfPage(); }
-function zoomOut() { if (!currentPdf) return; currentScale = Math.max(0.5, currentScale - 0.25); renderPdfPage(); }
 
 // PDF-Stage: Kontextmenü und Auswahl unterbinden (kein expliziter Download)
 const stage = $("#pdf-stage");
@@ -1989,8 +2111,54 @@ function mergedAuftrag(a, edits) {
   return { ...a, ...e };
 }
 
+// Einfacher Editor-Passwortschutz (clientseitig – hält Gelegenheitszugriffe ab,
+// ist aber kein echter Serverschutz, da der Code im Browser einsehbar ist).
+const EDITOR_PW = "sanitaer-gbs";   // bei Bedarf hier ändern
+const EDITOR_SESSION_KEY = "sanigbs:editor-unlocked";
+
+function renderEditorGate(v) {
+  v.appendChild(el(`
+    <div class="editor-gate">
+      <div class="editor-gate-card">
+        <div class="editor-gate-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg>
+        </div>
+        <h1>Editor-Bereich</h1>
+        <p>Dieser Bereich ist für Lehrpersonen. Bitte gib das Passwort ein.</p>
+        <form id="editor-gate-form">
+          <input type="password" id="editor-gate-pw" placeholder="Passwort" autocomplete="current-password" />
+          <button class="btn btn-primary" type="submit">Entsperren</button>
+        </form>
+        <p class="editor-gate-error" id="editor-gate-error" hidden>Falsches Passwort.</p>
+        <a class="editor-gate-back" href="#/">← Zurück zur Startseite</a>
+      </div>
+    </div>
+  `));
+  const form = $("#editor-gate-form");
+  const pw = $("#editor-gate-pw");
+  pw.focus();
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (pw.value === EDITOR_PW) {
+      sessionStorage.setItem(EDITOR_SESSION_KEY, "1");
+      renderEditor();
+    } else {
+      $("#editor-gate-error").hidden = false;
+      pw.value = "";
+      pw.focus();
+    }
+  });
+}
+
 function renderEditor() {
   const v = $("#view");
+
+  // Passwort-Gate
+  if (sessionStorage.getItem(EDITOR_SESSION_KEY) !== "1") {
+    renderEditorGate(v);
+    return;
+  }
+
   const edits = loadEdits();
   const merged = state.data.aufträge.map((a) => mergedAuftrag(a, edits));
   const editedCount = Object.keys(edits).length;
@@ -2132,6 +2300,21 @@ function drawEditPane(id) {
       <div class="meta">Status: <strong>${escapeHtml(cur.titelStatus || "vorläufig")}</strong></div>
     </header>
 
+    <div class="edit-upload" id="edit-upload">
+      <div class="edit-upload-info">
+        <strong>Auftrags-PDF ersetzen</strong>
+        <p id="edit-upload-status">Lädt …</p>
+      </div>
+      <div class="edit-upload-actions">
+        <label class="btn btn-primary">
+          <input type="file" id="edit-pdf-file" accept="application/pdf" hidden>
+          PDF hochladen
+        </label>
+        <button class="btn btn-ghost" id="edit-pdf-reset" type="button" hidden>Original wiederherstellen</button>
+        <button class="btn btn-ghost" id="edit-pdf-preview" type="button">Vorschau öffnen</button>
+      </div>
+    </div>
+
     <form id="edit-form" class="edit-form">
       <label class="ef">
         <span>Titel</span>
@@ -2214,6 +2397,58 @@ function drawEditPane(id) {
     drawEditList();
     drawEditPane(id);
   });
+
+  // ---- PDF-Upload ----
+  const updateUploadStatus = async () => {
+    const rec = await idbGetPdf(id);
+    const status = $("#edit-upload-status");
+    const resetBtn = $("#edit-pdf-reset");
+    if (rec && rec.blob) {
+      const kb = Math.round(rec.blob.size / 1024);
+      const d = new Date(rec.ts);
+      const dStr = `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+      status.innerHTML = `✓ Ersetzt durch <strong>${escapeHtml(rec.meta?.name || "neue Datei")}</strong> (${kb} KB · ${dStr}). Vorschau und Reader nutzen diese Version.`;
+      status.className = "is-replaced";
+      resetBtn.hidden = false;
+    } else {
+      status.innerHTML = `Aktuell: Original <code>${escapeHtml(cur.pdfDateiname)}</code>. Lade ein neues PDF hoch, um es zu ersetzen.`;
+      status.className = "";
+      resetBtn.hidden = true;
+    }
+  };
+  updateUploadStatus();
+
+  $("#edit-pdf-file").addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") { alert("Bitte eine PDF-Datei wählen."); return; }
+    if (file.size > 25 * 1024 * 1024) { alert("Die Datei ist sehr gross (>25 MB). Bitte kleiner halten."); return; }
+    const status = $("#edit-upload-status");
+    status.textContent = "Wird gespeichert …";
+    try {
+      await idbPutPdf(id, file, { name: file.name });
+      // Thumbnail-Cache für diese id leeren, damit Vorschau neu rendert
+      const c = readThumbCache();
+      Object.keys(c).forEach((k) => { if (k === id || k.startsWith(id + "@")) delete c[k]; });
+      writeThumbCache(c);
+      await updateUploadStatus();
+      flashSaved(pane);
+    } catch (err) {
+      status.textContent = "Speichern fehlgeschlagen: " + err.message;
+    }
+    e.target.value = "";
+  });
+
+  $("#edit-pdf-reset").addEventListener("click", async () => {
+    if (!confirm("Hochgeladenes PDF entfernen und wieder das Original verwenden?")) return;
+    await idbDeletePdf(id);
+    const c = readThumbCache();
+    Object.keys(c).forEach((k) => { if (k === id || k.startsWith(id + "@")) delete c[k]; });
+    writeThumbCache(c);
+    await updateUploadStatus();
+  });
+
+  $("#edit-pdf-preview").addEventListener("click", () => openPdf(cur));
 }
 
 function collectDiff(orig, fd) {

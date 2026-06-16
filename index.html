@@ -18,15 +18,13 @@
   <a href="#main" class="skip-link">Zum Inhalt springen</a>
 
   <header class="topbar" role="banner">
-    <a href="#/" class="brand" data-link aria-label="Startseite">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 32 32" width="28" height="28">
-          <path d="M16 3c-4 6-8 10-8 15a8 8 0 0 0 16 0c0-5-4-9-8-15z" fill="currentColor" />
-        </svg>
+    <a href="#/" class="brand" data-link aria-label="GBS St. Gallen – Startseite">
+      <span class="brand-logo">
+        <img src="assets/img/gbs-logo.png" alt="GBS St. Gallen" />
       </span>
       <span class="brand-text">
-        <strong>Sanitär GBS</strong>
-        <small>Lernplattform · St. Gallen</small>
+        <strong>Lernplattform Sanitär</strong>
+        <small>Sanitärinstallateur/in EFZ</small>
       </span>
     </a>
 
@@ -93,15 +91,15 @@
         </div>
       </header>
       <div class="modal-body" id="pdf-stage">
-        <canvas id="pdf-canvas" aria-label="PDF-Seite"></canvas>
+        <div id="pdf-flip" class="pdf-flip" aria-label="PDF-Broschüre"></div>
         <p class="pdf-empty" id="pdf-empty">PDF wird geladen …</p>
       </div>
     </div>
   </div>
 
-  <!-- Externe Bibliotheken: Fuse.js (Suche) und PDF.js (Viewer) per CDN -->
+  <!-- Externe Bibliotheken: Fuse.js (Suche), PDF.js (Viewer), StPageFlip (Blättern) per CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs" type="module"></script>
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
   <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>
