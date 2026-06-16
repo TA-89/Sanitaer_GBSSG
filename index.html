@@ -6,9 +6,12 @@
   <meta name="theme-color" content="#F5EFE6" />
   <title>Sanitär GBS – Lernplattform</title>
   <meta name="description" content="Lernplattform für Sanitärinstallateurinnen und Sanitärinstallateure EFZ an der GBS St. Gallen." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <!-- Geist Variable Font (Vercel) via Bunny Fonts (DSGVO-freundlich) -->
+  <link href="https://fonts.bunny.net/css?family=geist:100,200,300,400,500,600,700,800,900&display=swap" rel="stylesheet" />
+  <!-- Geist Mono (für Codes / Auftragsnummern) -->
+  <link href="https://fonts.bunny.net/css?family=geist-mono:400,500,600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/main.css" />
 </head>
 <body>
@@ -37,12 +40,9 @@
     </form>
 
     <nav class="topnav" aria-label="Hauptnavigation">
-      <a href="#/" data-link>Start</a>
-      <a href="#/semester" data-link>Semester</a>
-      <a href="#/pfad" data-link>Chronologie</a>
-      <a href="#/suche" data-link>Suche</a>
-      <a href="#/kompetenzen" data-link>Handlungskompetenzen</a>
-      <a href="#/info" data-link>Info</a>
+      <a href="#/" data-link>Entdecken</a>
+      <a href="#/suche" data-link>Suchen</a>
+      <a href="#/kompetenzen" data-link>Kompetenzen</a>
     </nav>
   </header>
 
@@ -52,29 +52,27 @@
 
   <nav class="bottomnav" aria-label="Mobile Hauptnavigation">
     <a href="#/" data-link>
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-      <span>Start</span>
-    </a>
-    <a href="#/semester" data-link>
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 4v3M16 4v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>Semester</span>
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+      <span>Entdecken</span>
     </a>
     <a href="#/suche" data-link>
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>Suche</span>
+      <span>Suchen</span>
     </a>
     <a href="#/kompetenzen" data-link>
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 5h16v4H4zM4 11h16v4H4zM4 17h16v3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-      <span>Komp.</span>
-    </a>
-    <a href="#/info" data-link>
-      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v6M12 7.5v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      <span>Info</span>
+      <span>Kompetenzen</span>
     </a>
   </nav>
 
   <footer class="footer">
-    <small>GBS St. Gallen · Fachgruppe Sanitär &amp; Spengler · Version 1.0 (Prototyp)</small>
+    <div class="footer-inner">
+      <small>GBS St. Gallen · Fachgruppe Sanitär &amp; Spengler · © T. Arnold &amp; M. Item</small>
+      <nav class="footer-more" aria-label="Mehr">
+        <a href="#/info">Info</a>
+        <a href="#/edit">Editor</a>
+      </nav>
+    </div>
   </footer>
 
   <!-- PDF-Viewer-Modal -->

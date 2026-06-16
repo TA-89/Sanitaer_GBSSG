@@ -292,9 +292,11 @@ function pillRow(auftrag) {
 // ---------------------------------------------------------------------------
 const routes = [
   { match: /^#?\/?$/, render: renderHome },
-  { match: /^#\/semester$/, render: renderSemesterList },
+  // Alte Pfade auf Home umleiten (Lesezeichen-Kompatibilität)
+  { match: /^#\/semester$/, render: () => { location.hash = "#/"; } },
+  { match: /^#\/pfad$/, render: () => { location.hash = "#/"; } },
+  // Funktionale Routen bleiben erhalten
   { match: /^#\/semester\/(\d)$/, render: renderSemester, params: ["num"] },
-  { match: /^#\/pfad$/, render: renderLernpfad },
   { match: /^#\/auftrag\/(\d+\.\d+)$/, render: renderAuftrag, params: ["id"] },
   { match: /^#\/suche(?:\?q=(.*))?$/, render: renderSearch, params: ["q"] },
   { match: /^#\/kompetenzen$/, render: renderKompetenzen },
@@ -336,12 +338,10 @@ async function route() {
 
 function updateActiveNav() {
   const hash = location.hash || "#/";
-  const norm = hash.startsWith("#/semester") ? "#/semester"
-    : hash.startsWith("#/auftrag") ? "#/semester"
-    : hash.startsWith("#/pfad") ? "#/pfad"
-    : hash.startsWith("#/suche") ? "#/suche"
+  // 3 Hauptbereiche: Entdecken (/), Suchen (/suche), Kompetenzen (/kompetenzen)
+  // Alles andere fällt auf "Entdecken" zurück (Auftrags-Detail, Semester, Pfad, Info, Edit)
+  const norm = hash.startsWith("#/suche") ? "#/suche"
     : (hash.startsWith("#/kompetenzen") || hash.startsWith("#/plakat")) ? "#/kompetenzen"
-    : hash.startsWith("#/info") ? "#/info"
     : "#/";
   $$(".topnav a, .bottomnav a").forEach((a) => {
     a.classList.toggle("is-active", a.getAttribute("href") === norm);
@@ -364,80 +364,221 @@ $("#topbar-search").addEventListener("submit", (e) => {
 // Seiten
 // ---------------------------------------------------------------------------
 
-// ----- Start
+// ----- Entdecken (Master-Mosaik aller Aufträge)
+const MOSAIK_FILTER_KEY = "sanigbs:mosaik:v1";
+function loadMosaikState() {
+  try { return JSON.parse(localStorage.getItem(MOSAIK_FILTER_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveMosaikState(s) {
+  try { localStorage.setItem(MOSAIK_FILTER_KEY, JSON.stringify(s)); } catch {}
+}
+
 function renderHome() {
   const v = $("#view");
   const total = state.data.aufträge.length;
+  const persisted = loadMosaikState();
+  const filterSem = new Set(persisted.sem || []);
+  const filterThema = new Set(persisted.thema ? [persisted.thema] : []);
+  const filterHk = new Set(persisted.hk || []);
+  let viewMode = persisted.view || "mosaik";
+
+  const themen = Array.from(new Set(state.data.aufträge.map((a) => a.thema).filter(Boolean))).sort();
+  const hfs = state.hf.handlungsfelder;
+
   v.appendChild(el(`
-    <section class="hero">
-      <div class="hero-content">
-        <span class="hero-eyebrow">GBS St. Gallen · Sanitärinstallateur/in EFZ</span>
-        <h1>Alle Lernaufträge. Klar geordnet.</h1>
-        <p>Die 8 Semester deiner Ausbildung auf einen Blick — Lernaufträge ansehen, gezielt durchsuchen und Themen schnell finden.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#/semester">Semester ansehen</a>
-          <a class="btn btn-ghost" href="#/suche">Thema suchen</a>
+    <section class="entdecken">
+      <header class="entdecken-hero">
+        <div class="entdecken-hero-eyebrow">
+          <span class="entdecken-dot"></span>
+          GBS St. Gallen · Sanitärinstallateur/in EFZ
         </div>
-      </div>
-      <div class="hero-media">
-        <img src="assets/img/hero.png" alt="Sanitär-Armatur mit Wasserstrahl" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';" />
-        <div class="hero-media-fallback" style="display:none">Bild folgt</div>
-      </div>
-    </section>
+        <h1>Alle <span class="hero-num">${total}</span> Lernaufträge.<br><span class="hero-em">Auf einen Blick.</span></h1>
+        <p class="entdecken-hero-sub">Acht Semester, eine Übersicht. Filter unten nach Semester, Thema oder Handlungsfeld — oder tippe einen Begriff in die Schnellsuche.</p>
 
-    <section class="lead-grid">
-      <a class="lead-card" href="#/semester">
-        <div class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 4v3M16 4v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <div class="entdecken-search">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input id="entdecken-search-input" type="search" placeholder="Schnellsuche – Begriff eingeben, Enter drücken" autocomplete="off" />
+          <kbd>↵</kbd>
         </div>
-        <h3>Mein Semester</h3>
-        <p>Alle Aufträge des laufenden Semesters mit kurzer Themenübersicht.</p>
-      </a>
-      <a class="lead-card" href="#/suche">
-        <div class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </div>
-        <h3>Thema suchen</h3>
-        <p>Begriff eingeben — z. B. «Solar», «Z-Mass», «Hygiene» — passender Auftrag erscheint.</p>
-      </a>
-      <a class="lead-card" href="#/kompetenzen">
-        <div class="icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 5h16v4H4zM4 11h16v4H4zM4 17h16v3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        </div>
-        <h3>Handlungskompetenzen</h3>
-        <p>Die 7 Handlungsfelder im Überblick — mit zugeordneten Aufträgen.</p>
-      </a>
-    </section>
+      </header>
 
-    <section id="recent-section" hidden>
-      <div class="section-head">
-        <h2>Zuletzt geöffnet</h2>
-        <a class="meta" href="#/semester">Alle Semester →</a>
+      <div class="entdecken-toolbar">
+        <div class="entdecken-filters" id="entdecken-filters"></div>
+        <div class="entdecken-mode" role="tablist" aria-label="Ansicht wechseln">
+          <button class="mode-btn ${viewMode === "mosaik" ? "is-active" : ""}" data-mode="mosaik" role="tab" aria-selected="${viewMode === "mosaik"}">
+            <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            Mosaik
+          </button>
+          <button class="mode-btn ${viewMode === "chronologie" ? "is-active" : ""}" data-mode="chronologie" role="tab" aria-selected="${viewMode === "chronologie"}">
+            <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="6" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6h11M10 12h8M10 18h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Chronologie
+          </button>
+        </div>
       </div>
-      <div class="auf-grid" id="recent-grid"></div>
-    </section>
 
-    <section>
-      <div class="section-head">
-        <h2>So findest du deinen Auftrag</h2>
-        <span class="meta">${total} Aufträge insgesamt</span>
-      </div>
-      <ol style="line-height:1.8; color:var(--ink-soft); padding-left:1.2em;">
-        <li>Wähle dein Semester (1–8) und scrolle durch die Aufträge.</li>
-        <li>Oder gib oben in der Suche ein Thema ein und drücke <strong>Suchen</strong>.</li>
-        <li>Klicke einen Auftrag an — die Vorschau und der PDF-Reader öffnen sich direkt auf der Seite.</li>
-      </ol>
+      <div class="entdecken-content" id="entdecken-content"></div>
     </section>
   `));
 
-  // Recent
-  const recent = getRecent().map(aufById).filter(Boolean);
-  if (recent.length) {
-    $("#recent-section").hidden = false;
-    const grid = $("#recent-grid");
-    recent.forEach((a) => grid.appendChild(auftragCard(a)));
-    attachThumbnails(grid);
+  const filterBar = $("#entdecken-filters");
+
+  const semGroup = el(`<div class="filter-group-chips" data-group="sem"><span class="filter-label">Semester</span></div>`);
+  for (let i = 1; i <= 8; i++) {
+    const active = filterSem.has(i);
+    semGroup.appendChild(el(`<button class="chip ${active ? "is-active" : ""}" data-sem="${i}" type="button">${i}</button>`));
   }
+  filterBar.appendChild(semGroup);
+
+  const themaGroup = el(`<div class="filter-group-chips" data-group="thema"><span class="filter-label">Thema</span></div>`);
+  const themaSelect = el(`<select class="filter-select" id="filter-thema"><option value="">Alle</option>${themen.map((t) => `<option ${filterThema.has(t) ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}</select>`);
+  themaGroup.appendChild(themaSelect);
+  filterBar.appendChild(themaGroup);
+
+  const hkGroup = el(`<div class="filter-group-chips" data-group="hk"><span class="filter-label">Handlungsfeld</span></div>`);
+  hfs.forEach((hf) => {
+    const active = filterHk.has(hf.code);
+    hkGroup.appendChild(el(`<button class="chip chip-hk ${active ? "is-active" : ""}" data-hf="${hf.code}" type="button" title="${escapeHtml(hf.titel)}" style="--chip-color:${hf.farbe}">HF ${hf.code}</button>`));
+  });
+  filterBar.appendChild(hkGroup);
+
+  const resetBtn = el(`<button class="filter-reset" type="button">Zurücksetzen</button>`);
+  filterBar.appendChild(resetBtn);
+
+  const renderContent = () => {
+    const content = $("#entdecken-content");
+    content.innerHTML = "";
+    content.className = "entdecken-content " + (viewMode === "chronologie" ? "is-chrono" : "is-mosaik");
+
+    const filtered = state.data.aufträge.filter((a) => {
+      if (filterSem.size && !filterSem.has(a.semester)) return false;
+      if (filterThema.size && !filterThema.has(a.thema)) return false;
+      if (filterHk.size) {
+        const aufHfs = new Set((a.handlungskompetenzen || []).map((c) => c.split(".")[0]));
+        let match = false;
+        filterHk.forEach((hf) => { if (aufHfs.has(hf)) match = true; });
+        if (!match) return false;
+      }
+      return true;
+    });
+
+    const reihenfolge = state.reihenfolge?.semester || {};
+    const grouped = new Map();
+    state.data.semester.forEach((s) => grouped.set(s.nummer, []));
+    filtered.forEach((a) => { if (grouped.has(a.semester)) grouped.get(a.semester).push(a); });
+    grouped.forEach((aufs, semNum) => {
+      const order = reihenfolge[String(semNum)];
+      if (order && order.length) {
+        const map = new Map(order.map((id, i) => [id, i]));
+        aufs.sort((a, b) => (map.get(a.id) ?? 999) - (map.get(b.id) ?? 999));
+      } else {
+        aufs.sort((a, b) => Number(a.auftragNummer.split(".")[1] || 0) - Number(b.auftragNummer.split(".")[1] || 0));
+      }
+    });
+
+    if (filtered.length === 0) {
+      content.appendChild(el(`<div class="empty"><p>Keine Aufträge entsprechen den Filtern.</p><button class="btn btn-ghost" type="button" id="empty-reset">Filter zurücksetzen</button></div>`));
+      $("#empty-reset").addEventListener("click", () => resetBtn.click());
+      return;
+    }
+
+    state.data.semester.forEach((s) => {
+      const aufs = grouped.get(s.nummer) || [];
+      if (!aufs.length) return;
+      const lj = Math.ceil(s.nummer / 2);
+
+      const band = el(`
+        <section class="band" data-sem="${s.nummer}">
+          <header class="band-head">
+            <div class="band-num">${s.nummer}<span class="band-num-sep">/8</span></div>
+            <div class="band-info">
+              <div class="band-meta">${lj}. Lehrjahr · ${aufs.length} ${aufs.length === 1 ? "Auftrag" : "Aufträge"}</div>
+              <h2>${escapeHtml(s.titel)}</h2>
+            </div>
+          </header>
+          <div class="band-grid"></div>
+        </section>
+      `);
+      const grid = band.querySelector(".band-grid");
+      aufs.forEach((a, i) => {
+        const hk = (a.handlungskompetenzen || []).map((c) => hkByCode(c)).filter(Boolean);
+        const hf = hk[0]?.handlungsfeld;
+        grid.appendChild(el(`
+          <a class="tile" href="#/auftrag/${a.id}" style="--tile-delay:${i * 18}ms" aria-label="Auftrag ${escapeHtml(a.auftragNummer)} – ${escapeHtml(a.titel)}">
+            <div class="tile-num">${escapeHtml(a.auftragNummer)}</div>
+            <div class="tile-body">
+              <h3 class="tile-title">${escapeHtml(a.titel)}</h3>
+              ${a.thema ? `<span class="tile-thema">${escapeHtml(a.thema)}</span>` : ""}
+            </div>
+            ${hf ? `<div class="tile-hf"><span class="tile-hf-dot" style="background:${hf.farbe}" title="HF ${escapeHtml(hf.code)} · ${escapeHtml(hf.titel)}"></span></div>` : ""}
+          </a>
+        `));
+      });
+      content.appendChild(band);
+    });
+  };
+
+  const persistFilters = () => saveMosaikState({
+    sem: [...filterSem],
+    thema: [...filterThema][0] || "",
+    hk: [...filterHk],
+    view: viewMode,
+  });
+
+  semGroup.addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip[data-sem]");
+    if (!btn) return;
+    const num = Number(btn.dataset.sem);
+    if (filterSem.has(num)) filterSem.delete(num);
+    else filterSem.add(num);
+    btn.classList.toggle("is-active");
+    persistFilters(); renderContent();
+  });
+
+  hkGroup.addEventListener("click", (e) => {
+    const btn = e.target.closest(".chip-hk[data-hf]");
+    if (!btn) return;
+    const code = btn.dataset.hf;
+    if (filterHk.has(code)) filterHk.delete(code);
+    else filterHk.add(code);
+    btn.classList.toggle("is-active");
+    persistFilters(); renderContent();
+  });
+
+  themaSelect.addEventListener("change", () => {
+    filterThema.clear();
+    if (themaSelect.value) filterThema.add(themaSelect.value);
+    persistFilters(); renderContent();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    filterSem.clear(); filterThema.clear(); filterHk.clear();
+    semGroup.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
+    hkGroup.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-active"));
+    themaSelect.value = "";
+    persistFilters(); renderContent();
+  });
+
+  $$(".entdecken-mode .mode-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      viewMode = btn.dataset.mode;
+      $$(".entdecken-mode .mode-btn").forEach((b) => {
+        b.classList.toggle("is-active", b === btn);
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
+      });
+      persistFilters(); renderContent();
+    });
+  });
+
+  const searchInput = $("#entdecken-search-input");
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const q = searchInput.value.trim();
+      if (q) location.hash = `#/suche?q=${encodeURIComponent(q)}`;
+    }
+  });
+
+  renderContent();
 }
 
 // ----- Semester-Übersicht (8 Karten)
