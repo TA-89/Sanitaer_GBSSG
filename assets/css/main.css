@@ -229,6 +229,8 @@ p { margin: 0 0 var(--space-4); color: var(--ink-soft); }
 .iconbtn:hover { background: var(--sand); }
 .iconbtn-close { background: var(--ink); color: #fff; border-color: var(--ink); }
 .iconbtn-close:hover { background: #000; }
+.iconbtn-text { text-decoration: none; }
+.iconbtn-text:hover { text-decoration: none; }
 
 /* ==========================================================================
    Layout
@@ -1142,25 +1144,25 @@ mark { background: #FBE8C4; color: var(--ink); padding: 0 2px; border-radius: 3p
 }
 .modal-body {
   flex: 1; overflow: hidden;
-  background: linear-gradient(180deg, #2a3034 0%, #1a1f22 100%);
-  padding: var(--space-5);
-  display: grid; place-items: center;
-  user-select: none;
-  -webkit-user-select: none;
+  background: #4a5258;
+  padding: 0;
+  display: grid; place-items: stretch;
   position: relative;
 }
-.pdf-flip {
-  transition: transform .2s ease;
-  transform-origin: center center;
+.pdf-frame-wrap { width: 100%; height: 100%; position: relative; }
+.pdf-frame {
+  width: 100%; height: 100%;
+  border: 0;
+  display: block;
+  background: #4a5258;
 }
-.pdf-flip .stf__item { background: #fff; }
-/* sanfter Schatten unter dem Buch */
-.pdf-flip .stf__parent { box-shadow: 0 30px 60px rgba(0,0,0,0.35); }
 .pdf-empty {
-  position: absolute;
-  color: rgba(255,255,255,0.7);
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: rgba(255,255,255,0.85);
   text-align: center;
   line-height: 1.6;
+  padding: var(--space-5);
 }
 .pdf-empty[hidden] { display: none; }
 
@@ -1770,6 +1772,14 @@ mark { background: #FBE8C4; color: var(--ink); padding: 0 2px; border-radius: 3p
 .edit-upload-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .edit-upload-actions .btn { cursor: pointer; }
 
+.edit-hint {
+  font-size: 0.88rem; color: var(--ink-soft);
+  background: var(--water-soft);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.edit-hint code { font-family: var(--font-mono); font-size: 0.82rem; }
 .edit-form { display: flex; flex-direction: column; gap: var(--space-4); }
 .ef { display: flex; flex-direction: column; gap: 6px; }
 .ef > span, .ef > legend {

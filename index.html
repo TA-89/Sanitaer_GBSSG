@@ -73,33 +73,30 @@
     </div>
   </footer>
 
-  <!-- PDF-Viewer-Modal -->
-  <div id="pdf-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="PDF-Anzeige">
+  <!-- PDF-Viewer-Modal (eingebetteter PDF-Viewer) -->
+  <div id="pdf-modal" class="modal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Auftrag ansehen">
     <div class="modal-backdrop" data-close></div>
     <div class="modal-panel">
       <header class="modal-header">
         <h2 id="pdf-modal-title">Auftrag</h2>
         <div class="modal-tools">
-          <button type="button" class="iconbtn" id="pdf-prev" aria-label="Vorherige Seite">‹</button>
-          <span class="pageinfo"><span id="pdf-page">1</span> / <span id="pdf-pages">–</span></span>
-          <button type="button" class="iconbtn" id="pdf-next" aria-label="Nächste Seite">›</button>
-          <span class="sep" aria-hidden="true"></span>
-          <button type="button" class="iconbtn" id="pdf-zoom-out" aria-label="Verkleinern">−</button>
-          <button type="button" class="iconbtn" id="pdf-zoom-in" aria-label="Vergrössern">+</button>
-          <span class="sep" aria-hidden="true"></span>
+          <a id="pdf-newtab" class="iconbtn iconbtn-text" href="#" target="_blank" rel="noopener" title="In neuem Tab öffnen">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
           <button type="button" class="iconbtn iconbtn-close" data-close aria-label="Schliessen">✕</button>
         </div>
       </header>
       <div class="modal-body" id="pdf-stage">
-        <div id="pdf-flip" class="pdf-flip" aria-label="PDF-Broschüre"></div>
-        <p class="pdf-empty" id="pdf-empty">PDF wird geladen …</p>
+        <div class="pdf-frame-wrap" id="pdf-frame-wrap">
+          <iframe id="pdf-frame" class="pdf-frame" title="Auftrag-PDF" referrerpolicy="no-referrer"></iframe>
+        </div>
+        <p class="pdf-empty" id="pdf-empty" hidden>PDF wird geladen …</p>
       </div>
     </div>
   </div>
 
-  <!-- Externe Bibliotheken: Fuse.js (Suche), PDF.js (Viewer), StPageFlip (Blättern) per CDN -->
+  <!-- Externe Bibliotheken: Fuse.js (Suche), PDF.js (nur für Vorschau-Thumbnails) per CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
   <script type="module" src="assets/js/app.js"></script>
 </body>
 </html>

@@ -5,6 +5,13 @@
 const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.min.mjs";
 const PDFJS_WORKER = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.6.82/build/pdf.worker.min.mjs";
 
+// Live-Datenquelle: die Auftrags-PDFs liegen auf sanitaerlernen.ch und werden
+// immer in der aktuellen Version geladen. URL wird aus der Auftragsnummer gebildet.
+const PDF_BASE = "https://sanitaerlernen.ch/0_Datenbank/1_Auftraege/";
+function auftragPdfUrl(a) {
+  return `${PDF_BASE}${a.semester}.Semester/${a.auftragNummer}_Auftrag.pdf`;
+}
+
 // ---------------------------------------------------------------------------
 // Datenzugriff
 // ---------------------------------------------------------------------------
@@ -1974,13 +1981,9 @@ async function resolvePdfSource(auftrag) {
 }
 
 // ---------------------------------------------------------------------------
-// PDF-Viewer mit Broschüren-Blättern (StPageFlip + PDF.js)
+// PDF-Viewer: eingebetteter Reader (iframe → Live-PDF von sanitaerlernen.ch)
 // ---------------------------------------------------------------------------
 let pdfjs = null;
-let currentPdf = null;
-let currentFlip = null;
-let currentZoom = 1;
-let currentBlobUrl = null;
 
 async function ensurePdfJs() {
   if (pdfjs) return pdfjs;
@@ -1989,89 +1992,33 @@ async function ensurePdfJs() {
   return pdfjs;
 }
 
-async function openPdf(auftrag) {
+// Aufträge, die (noch) nicht auf sanitaerlernen.ch liegen → lokales PDF als Fallback
+const PDF_NICHT_ONLINE = new Set(["2.11"]);
+
+function openPdf(auftrag) {
   const modal = $("#pdf-modal");
+  const frame = $("#pdf-frame");
+  const wrap = $("#pdf-frame-wrap");
+  const empty = $("#pdf-empty");
+
   $("#pdf-modal-title").textContent = `${auftrag.auftragNummer} · ${auftrag.titel}`;
-  $("#pdf-page").textContent = "1";
-  $("#pdf-pages").textContent = "…";
-  $("#pdf-empty").hidden = false;
-  $("#pdf-empty").textContent = "PDF wird geladen …";
-  const flipHost = $("#pdf-flip");
-  flipHost.innerHTML = "";
+
+  // Live-URL (immer aktuell) – ausser bei nicht-online Aufträgen
+  const liveUrl = PDF_NICHT_ONLINE.has(auftrag.id) ? auftrag.pdfPfad : auftragPdfUrl(auftrag);
+  // Saubere Anzeige: Toolbar/Seitenleiste aus, an Breite anpassen
+  const viewerUrl = liveUrl + "#toolbar=0&navpanes=0&statusbar=0&view=FitH";
+
+  $("#pdf-newtab").href = liveUrl;
+  empty.hidden = true;
+  wrap.classList.remove("is-error");
+  frame.src = viewerUrl;
+
   modal.hidden = false;
   modal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-  currentZoom = 1;
-  $("#pdf-stage").style.setProperty("--pdf-zoom", "1");
 
-  try {
-    const lib = await ensurePdfJs();
-    const src = await resolvePdfSource(auftrag);
-    if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
-    if (src.isBlob) currentBlobUrl = src.url;
-
-    currentPdf = await lib.getDocument(src.url).promise;
-    const numPages = currentPdf.numPages;
-    $("#pdf-pages").textContent = numPages;
-
-    // Alle Seiten als Bilder rendern (gute Auflösung für scharfes Blättern)
-    const page1 = await currentPdf.getPage(1);
-    const base = page1.getViewport({ scale: 1 });
-    const ratio = base.height / base.width;
-    const RENDER_W = Math.min(1000, Math.round(base.width * 1.6));
-    const images = [];
-    for (let p = 1; p <= numPages; p++) {
-      const page = await currentPdf.getPage(p);
-      const scale = RENDER_W / page.getViewport({ scale: 1 }).width;
-      const vp = page.getViewport({ scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.floor(vp.width);
-      canvas.height = Math.floor(vp.height);
-      await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
-      images.push(canvas.toDataURL("image/jpeg", 0.82));
-    }
-
-    $("#pdf-empty").hidden = true;
-
-    // Flip-Grösse aus Bühne berechnen
-    const stage = $("#pdf-stage");
-    const availH = stage.clientHeight - 24;
-    const availW = stage.clientWidth - 24;
-    let pageH = availH;
-    let pageW = pageH / ratio;
-    // bei Doppelseite max halbe Breite
-    const maxSingle = availW / (window.innerWidth >= 900 ? 2 : 1);
-    if (pageW > maxSingle) { pageW = maxSingle; pageH = pageW * ratio; }
-
-    const PageFlipCls = (window.St && window.St.PageFlip) || window.PageFlip;
-    if (!PageFlipCls) throw new Error("StPageFlip nicht geladen");
-    currentFlip = new PageFlipCls(flipHost, {
-      width: Math.round(pageW),
-      height: Math.round(pageH),
-      size: "stretch",
-      minWidth: 240, maxWidth: 1200,
-      minHeight: 320, maxHeight: 1700,
-      drawShadow: true,
-      flippingTime: 650,
-      usePortrait: window.innerWidth < 900,
-      showCover: false,
-      maxShadowOpacity: 0.4,
-      mobileScrollSupport: true,
-      clickEventForward: true,
-      useMouseEvents: true,
-    });
-    currentFlip.loadFromImages(images);
-    currentFlip.on("flip", (e) => {
-      $("#pdf-page").textContent = (e.data || 0) + 1;
-    });
-  } catch (err) {
-    $("#pdf-empty").hidden = false;
-    $("#pdf-empty").innerHTML = `
-      <strong>PDF konnte nicht geladen werden.</strong><br/>
-      <small>Erwarteter Pfad: <code>${escapeHtml(auftrag.pdfPfad)}</code></small>
-    `;
-    console.warn("PDF.js / Flip error", err);
-  }
+  // Falls das PDF nicht lädt (sehr selten), nach kurzer Zeit Hinweis zeigen
+  // (iframe liefert kein zuverlässiges error-Event bei Cross-Origin; daher dezenter Fallback-Link).
 }
 
 function closePdf() {
@@ -2079,10 +2026,7 @@ function closePdf() {
   modal.hidden = true;
   modal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
-  if (currentFlip) { try { currentFlip.destroy(); } catch {} currentFlip = null; }
-  if (currentPdf) { currentPdf.cleanup?.(); currentPdf.destroy?.(); currentPdf = null; }
-  if (currentBlobUrl) { URL.revokeObjectURL(currentBlobUrl); currentBlobUrl = null; }
-  $("#pdf-flip").innerHTML = "";
+  $("#pdf-frame").src = "about:blank";
 }
 
 document.addEventListener("click", (e) => {
@@ -2094,29 +2038,7 @@ document.addEventListener("keydown", (e) => {
   const modal = $("#pdf-modal");
   if (modal.hidden) return;
   if (e.key === "Escape") closePdf();
-  if (e.key === "ArrowRight" || e.key === "PageDown") nextPage();
-  if (e.key === "ArrowLeft" || e.key === "PageUp") prevPage();
-  if (e.key === "+" || e.key === "=") zoomIn();
-  if (e.key === "-") zoomOut();
 });
-$("#pdf-prev").addEventListener("click", () => prevPage());
-$("#pdf-next").addEventListener("click", () => nextPage());
-$("#pdf-zoom-in").addEventListener("click", () => zoomIn());
-$("#pdf-zoom-out").addEventListener("click", () => zoomOut());
-
-function nextPage() { if (currentFlip) currentFlip.flipNext(); }
-function prevPage() { if (currentFlip) currentFlip.flipPrev(); }
-function zoomIn() { setZoom(Math.min(2.2, currentZoom + 0.2)); }
-function zoomOut() { setZoom(Math.max(0.6, currentZoom - 0.2)); }
-function setZoom(z) {
-  currentZoom = z;
-  $("#pdf-flip").style.transform = `scale(${z})`;
-}
-
-// PDF-Stage: Kontextmenü und Auswahl unterbinden (kein expliziter Download)
-const stage = $("#pdf-stage");
-stage.addEventListener("contextmenu", (e) => e.preventDefault());
-stage.addEventListener("dragstart", (e) => e.preventDefault());
 
 // ---------------------------------------------------------------------------
 // Editor: Titel-/Kurzbeschreibungs-Korrekturen pro Auftrag
@@ -2319,7 +2241,6 @@ function drawEditPane(id) {
   if (!orig) return;
   const cur = mergedAuftrag(orig, edits);
 
-  const allHkList = allHks();
   pane.innerHTML = "";
   pane.appendChild(el(`
     <header class="edit-pane-head">
@@ -2327,20 +2248,7 @@ function drawEditPane(id) {
       <div class="meta">Status: <strong>${escapeHtml(cur.titelStatus || "vorläufig")}</strong></div>
     </header>
 
-    <div class="edit-upload" id="edit-upload">
-      <div class="edit-upload-info">
-        <strong>Auftrags-PDF ersetzen</strong>
-        <p id="edit-upload-status">Lädt …</p>
-      </div>
-      <div class="edit-upload-actions">
-        <label class="btn btn-primary">
-          <input type="file" id="edit-pdf-file" accept="application/pdf" hidden>
-          PDF hochladen
-        </label>
-        <button class="btn btn-ghost" id="edit-pdf-reset" type="button" hidden>Original wiederherstellen</button>
-        <button class="btn btn-ghost" id="edit-pdf-preview" type="button">Vorschau öffnen</button>
-      </div>
-    </div>
+    <p class="edit-hint">Das PDF kommt automatisch von <code>sanitaerlernen.ch</code> und ist immer aktuell. Hier bearbeitest du nur die Anzeige- und Such-Angaben.</p>
 
     <form id="edit-form" class="edit-form">
       <label class="ef">
@@ -2356,45 +2264,15 @@ function drawEditPane(id) {
         <input name="thema" type="text" value="${escapeHtml(cur.thema || "")}" />
       </label>
       <label class="ef">
-        <span>Kernbegriffe (Komma-getrennt)</span>
+        <span>Kernbegriffe (Komma-getrennt) — wichtig für die Suche</span>
         <input name="kernbegriffe" type="text" value="${escapeHtml((cur.kernbegriffe || []).join(", "))}" />
-      </label>
-
-      <fieldset class="ef">
-        <legend>Handlungskompetenzen</legend>
-        <div class="hk-checks">
-          ${state.hf.handlungsfelder.map((hf) => `
-            <div class="hk-checks-group">
-              <strong style="color:${hf.farbe}">HF ${escapeHtml(hf.code)} · ${escapeHtml(hf.titel)}</strong>
-              ${(hf.kompetenzen||[]).map((k) => `
-                <label class="hk-check">
-                  <input type="checkbox" name="hk" value="${k.code}" ${(cur.handlungskompetenzen||[]).includes(k.code) ? "checked" : ""}>
-                  <span>${escapeHtml(k.code)} – ${escapeHtml(k.titel)}</span>
-                </label>
-              `).join("")}
-            </div>
-          `).join("")}
-        </div>
-      </fieldset>
-
-      <label class="ef">
-        <span>Lernziele (je Zeile)</span>
-        <textarea name="lernziele" rows="4">${escapeHtml((cur.lernziele || []).join("\n"))}</textarea>
-      </label>
-      <label class="ef">
-        <span>Leistungsziele BFS (Komma-getrennt, z. B. 1.1.1, 2.3.10)</span>
-        <input name="leistungszieleBFS" type="text" value="${escapeHtml((cur.leistungszieleBFS || []).join(", "))}" />
-      </label>
-      <label class="ef">
-        <span>Leistungsnachweise (je Zeile)</span>
-        <textarea name="leistungsnachweise" rows="3">${escapeHtml((cur.leistungsnachweise || []).join("\n"))}</textarea>
       </label>
 
       <div class="edit-actions">
         <button class="btn btn-primary" type="submit">Speichern</button>
         <button class="btn btn-ghost" type="button" id="mark-checked">Als geprüft markieren</button>
-        <button class="btn btn-ghost" type="button" id="revert-auftrag">Original wiederherstellen</button>
-        <a class="btn btn-ghost" href="#/auftrag/${cur.id}" target="_blank" rel="noopener">Vorschau →</a>
+        <button class="btn btn-ghost" type="button" id="revert-auftrag">Änderungen verwerfen</button>
+        <a class="btn btn-ghost" href="#/auftrag/${cur.id}">Vorschau →</a>
       </div>
     </form>
   `));
@@ -2424,72 +2302,17 @@ function drawEditPane(id) {
     drawEditList();
     drawEditPane(id);
   });
-
-  // ---- PDF-Upload ----
-  const updateUploadStatus = async () => {
-    const rec = await idbGetPdf(id);
-    const status = $("#edit-upload-status");
-    const resetBtn = $("#edit-pdf-reset");
-    if (rec && rec.blob) {
-      const kb = Math.round(rec.blob.size / 1024);
-      const d = new Date(rec.ts);
-      const dStr = `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
-      status.innerHTML = `✓ Ersetzt durch <strong>${escapeHtml(rec.meta?.name || "neue Datei")}</strong> (${kb} KB · ${dStr}). Vorschau und Reader nutzen diese Version.`;
-      status.className = "is-replaced";
-      resetBtn.hidden = false;
-    } else {
-      status.innerHTML = `Aktuell: Original <code>${escapeHtml(cur.pdfDateiname)}</code>. Lade ein neues PDF hoch, um es zu ersetzen.`;
-      status.className = "";
-      resetBtn.hidden = true;
-    }
-  };
-  updateUploadStatus();
-
-  $("#edit-pdf-file").addEventListener("change", async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.type !== "application/pdf") { alert("Bitte eine PDF-Datei wählen."); return; }
-    if (file.size > 25 * 1024 * 1024) { alert("Die Datei ist sehr gross (>25 MB). Bitte kleiner halten."); return; }
-    const status = $("#edit-upload-status");
-    status.textContent = "Wird gespeichert …";
-    try {
-      await idbPutPdf(id, file, { name: file.name });
-      // Thumbnail-Cache für diese id leeren, damit Vorschau neu rendert
-      const c = readThumbCache();
-      Object.keys(c).forEach((k) => { if (k === id || k.startsWith(id + "@")) delete c[k]; });
-      writeThumbCache(c);
-      await updateUploadStatus();
-      flashSaved(pane);
-    } catch (err) {
-      status.textContent = "Speichern fehlgeschlagen: " + err.message;
-    }
-    e.target.value = "";
-  });
-
-  $("#edit-pdf-reset").addEventListener("click", async () => {
-    if (!confirm("Hochgeladenes PDF entfernen und wieder das Original verwenden?")) return;
-    await idbDeletePdf(id);
-    const c = readThumbCache();
-    Object.keys(c).forEach((k) => { if (k === id || k.startsWith(id + "@")) delete c[k]; });
-    writeThumbCache(c);
-    await updateUploadStatus();
-  });
-
-  $("#edit-pdf-preview").addEventListener("click", () => openPdf(cur));
 }
 
 function collectDiff(orig, fd) {
   const split = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
   const lines = (s) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+  // Editor bearbeitet nur noch Anzeige-/Such-Metadaten
   const next = {
     titel: fd.get("titel") || "",
     kurzbeschreibung: fd.get("kurzbeschreibung") || "",
     thema: fd.get("thema") || "",
     kernbegriffe: split(fd.get("kernbegriffe") || ""),
-    handlungskompetenzen: fd.getAll("hk"),
-    lernziele: lines(fd.get("lernziele") || ""),
-    leistungszieleBFS: split(fd.get("leistungszieleBFS") || ""),
-    leistungsnachweise: lines(fd.get("leistungsnachweise") || ""),
   };
   const diff = {};
   Object.entries(next).forEach(([k, v]) => {
