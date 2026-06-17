@@ -2598,12 +2598,6 @@ body.has-overlay { overflow: hidden; }
   .tp-navbtn { font-size: 0.85rem; padding: 0 10px; }
 }
 
-/* Klasse im Schultag-Kopf */
-.tp-dc-klasse {
-  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600;
-  color: var(--brand-darker); letter-spacing: -0.01em;
-}
-
 /* Tageskachel: der komplette Schultag in EINER Karte.
    Kopf = durchgehend schwarzer Balken (volle Kartenbreite) mit Titel, Klasse,
    Schultag und Navigation; darunter der weisse Inhaltsbereich. */
@@ -2629,10 +2623,19 @@ body.has-overlay { overflow: hidden; }
 .tp-dc-num-l { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; opacity: .8; }
 .tp-dc-num strong { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; margin: 2px 0 1px; }
 .tp-dc-of { font-size: 0.6rem; opacity: .7; }
-.tp-dc-when { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 1px; }
-.tp-dc-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(0, 0, 0, 0.62); }
-.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: var(--ink); }
-.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: rgba(0, 0, 0, 0.62); }
+.tp-dc-when { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: var(--space-2); }
+.tp-dc-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+/* Schwarzes Feld mit Schultag-Nr + Wochentag + Datum (weisse Schrift), rechts daneben die Klasse */
+.tp-dc-idrow { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
+.tp-dc-daybox {
+  display: inline-flex; flex-direction: column; gap: 1px;
+  background: var(--ink); color: #fff;
+  border-radius: var(--radius); padding: 8px 16px;
+}
+.tp-dc-daynr { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: #fff; }
+.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: rgba(255, 255, 255, 0.78); }
+.tp-dc-klasse { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
 .tp-dc-thema { margin-top: 2px; font-size: 0.86rem; font-weight: 600; color: var(--ink); }
 
 /* Navigation im hellgrünen Kopfbalken (für hellen Hintergrund: dunkle Schrift/Ränder) */

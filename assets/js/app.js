@@ -786,11 +786,16 @@ function renderTagesprogramm(params) {
   } else {
     const head = `
       <header class="tp-dc-head">
-        <div class="tp-dc-num"><span class="tp-dc-num-l">Schultag</span><strong>${idx + 1}</strong><span class="tp-dc-of">/ ${days.length}</span></div>
         <div class="tp-dc-when">
-          <span class="tp-dc-eyebrow">Berufskundeunterricht Sanitär · Klasse ${escapeHtml(klasse.id)}</span>
-          <span class="tp-dc-wd">${escapeHtml(weekdayLang(dayDate))}</span>
-          <span class="tp-dc-date">${escapeHtml(formatLang(dayDate))}</span>
+          <span class="tp-dc-eyebrow">Berufskundeunterricht Sanitär</span>
+          <div class="tp-dc-idrow">
+            <div class="tp-dc-daybox">
+              <span class="tp-dc-daynr">Schultag ${idx + 1}/${days.length}</span>
+              <span class="tp-dc-wd">${escapeHtml(weekdayLang(dayDate))}</span>
+              <span class="tp-dc-date">${escapeHtml(formatLang(dayDate))}</span>
+            </div>
+            <span class="tp-dc-klasse">Klasse ${escapeHtml(klasse.id)}</span>
+          </div>
         </div>
         ${navHtml}
       </header>`;
