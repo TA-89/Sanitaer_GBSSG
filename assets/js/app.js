@@ -683,17 +683,23 @@ function buildTilesHtml(klasseId, days, currentIdx, heute) {
     const dd = String(dt.getDate()).padStart(2, "0");
     const mm = String(dt.getMonth() + 1).padStart(2, "0");
     pieces.push(`<a class="tp-tile ${cur ? "is-current" : ""} ${today ? "is-today" : ""}" href="#/klasse/${encodeURIComponent(klasseId)}/${iso}">
-      <div class="tp-tile-top">
+      <div class="tp-tile-head">
         <span class="tp-tile-nr">${i + 1}</span>
-        ${pruef ? `<span class="tp-tile-ziel" title="Prüfung">${icoZiel}</span>` : ""}
-        ${cur ? `<span class="tp-tile-badge">${today ? "Heute" : "Aktuell"}</span>` : ""}
+        <span class="tp-tile-date">${weekdayKurz(isoWeekday(dt))} ${dd}.${mm}.${dt.getFullYear()}</span>
+        ${cur ? `<span class="tp-tile-badge">${today ? "Heute" : "Aktuell"}</span>` : (pruef ? `<span class="tp-tile-ziel" title="Prüfung">${icoZiel}</span>` : "")}
       </div>
-      <div class="tp-tile-date">${weekdayKurz(isoWeekday(dt))} ${dd}.${mm}.${dt.getFullYear()}</div>
-      <div class="tp-tile-thema ${thema ? "" : "is-empty"}">${thema ? escapeHtml(thema) : "Noch nicht geplant"}</div>
-      ${aufNums.length ? `<div class="tp-tile-aufs">${aufNums.map((nr) => { const col = auftragFarbe(nr); return `<span class="tp-tile-auf"${col ? ` style="color:${col}; border-color:${hexToRgba(col, 0.4)}"` : ""}>${escapeHtml(nr)}</span>`; }).join("")}</div>` : ""}
+      <div class="tp-tile-body">
+        <div class="tp-tile-thema ${thema ? "" : "is-empty"}">${thema ? escapeHtml(thema) : "Noch nicht geplant"}</div>
+        ${aufNums.length ? `<div class="tp-tile-aufs">${aufNums.map((nr) => { const col = auftragFarbe(nr); return `<span class="tp-tile-auf"${col ? ` style="color:${col}; border-color:${hexToRgba(col, 0.4)}"` : ""}>${escapeHtml(nr)}</span>`; }).join("")}</div>` : ""}
+      </div>
     </a>`);
   });
-  return `<div class="tp-section-label" id="weitere-anchor"><h2>Alle Schultage</h2><span class="meta">${days.length} Schultage · zum Öffnen anklicken</span></div><div class="tp-tiles">${pieces.join("")}</div>`;
+  return `<button class="tp-weitere-head" id="weitere-anchor" type="button" aria-expanded="false">
+      <svg class="tp-weitere-chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="tp-weitere-title">Alle Schultage</span>
+      <span class="meta">${days.length} Schultage · zum Öffnen anklicken</span>
+    </button>
+    <div class="tp-tiles" id="tp-tiles" hidden>${pieces.join("")}</div>`;
 }
 
 // ===========================================================================
@@ -822,13 +828,20 @@ function renderTagesprogramm(params) {
     });
   }
 
-  // Kachel-Übersicht aller Schultage
+  // Kachel-Übersicht aller Schultage (standardmässig eingeklappt)
   if (days.length) $("#tp-weitere").innerHTML = buildTilesHtml(klasseId, days, idx, heute);
+  const weitereHead = $("#weitere-anchor"), tilesEl = $("#tp-tiles");
+  const setWeitere = (open) => {
+    if (!tilesEl || !weitereHead) return;
+    if (open) tilesEl.removeAttribute("hidden"); else tilesEl.setAttribute("hidden", "");
+    weitereHead.setAttribute("aria-expanded", String(open));
+  };
+  if (weitereHead) weitereHead.addEventListener("click", () => setWeitere(tilesEl.hasAttribute("hidden")));
 
   // Interaktion (Nav ist nur vorhanden, wenn ein Schultag-Kopf gerendert wurde)
   const todayBtn = $("#tp-today"), semBtn = $("#tp-sem"), prevBtn = $("#tp-prev"), nextBtn = $("#tp-next");
   if (todayBtn) todayBtn.addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}`; route(); });
-  if (semBtn) semBtn.addEventListener("click", () => { const a = $("#weitere-anchor"); if (a) a.scrollIntoView({ behavior: "smooth", block: "start" }); });
+  if (semBtn) semBtn.addEventListener("click", () => { setWeitere(true); const a = $("#weitere-anchor"); if (a) a.scrollIntoView({ behavior: "smooth", block: "start" }); });
   if (prevBtn && idx > 0) prevBtn.addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx - 1]}`; });
   if (nextBtn && idx >= 0 && idx < days.length - 1) nextBtn.addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx + 1]}`; });
 
@@ -937,7 +950,7 @@ function exportSemesterPdf(klasseId) {
   const halbtag = klasse.halbtag;
 
   // Eine Seite = Titelseite + je ein Schultag. Seitenzahlen sind dadurch exakt bekannt.
-  const logo = `<div class="pdfpage-head"><img class="pdfpage-logo" src="assets/img/gbssg-logo-text.png" alt="Kanton St.Gallen – GBS St.Gallen"></div>`;
+  const logo = `<div class="pdfpage-head"><span class="pdfpage-bku">Berufskundeunterricht</span><img class="pdfpage-logo" src="assets/img/gbssg-logo-text.png" alt="Kanton St.Gallen – GBS St.Gallen"></div>`;
   const pageBodies = [];
   // Titelseite
   pageBodies.push(`<div class="pdfpage-title">
