@@ -760,24 +760,23 @@ function renderTagesprogramm(params) {
 
   v.appendChild(el(`
     <section class="tp">
-      <div class="tp-bar">
-        <span class="tp-bku">Berufskundeunterricht Sanitär</span>
-        <div class="tp-nav">
-          <div class="tp-nav-group">
-            <button class="tp-navbtn" id="tp-prev" ${idx <= 0 ? "disabled" : ""} aria-label="Vorheriger Schultag" title="Vorheriger Schultag">‹</button>
-            <button class="tp-navbtn tp-navbtn-mid" id="tp-today">Aktuell</button>
-            <button class="tp-navbtn" id="tp-next" ${idx < 0 || idx >= days.length - 1 ? "disabled" : ""} aria-label="Nächster Schultag" title="Nächster Schultag">›</button>
-          </div>
-          <button class="tp-navlink" id="tp-sem" type="button">Alle Schultage</button>
-        </div>
-      </div>
-
       ${banner ? `<div class="tp-banner"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>${banner}</span></div>` : ""}
 
       <div id="tp-day"></div>
       <div id="tp-weitere"></div>
     </section>
   `));
+
+  // Navigation (Aktuell · vor/zurück · Alle Schultage) – sitzt jetzt im schwarzen Kopfbalken.
+  const navHtml = `
+    <div class="tp-nav">
+      <div class="tp-nav-group">
+        <button class="tp-navbtn" id="tp-prev" ${idx <= 0 ? "disabled" : ""} aria-label="Vorheriger Schultag" title="Vorheriger Schultag">‹</button>
+        <button class="tp-navbtn tp-navbtn-mid" id="tp-today">Aktuell</button>
+        <button class="tp-navbtn" id="tp-next" ${idx < 0 || idx >= days.length - 1 ? "disabled" : ""} aria-label="Nächster Schultag" title="Nächster Schultag">›</button>
+      </div>
+      <button class="tp-navlink" id="tp-sem" type="button">Alle Schultage</button>
+    </div>`;
 
   // Aktueller Schultag als EINE Kachel: Kopf (Schultag-Nr + Datum) → Hausaufgaben fällig
   // → 5 Lektionen (3+2-Raster) → Lernaufträge/Links → Hausaufgaben nächste Woche.
@@ -789,21 +788,22 @@ function renderTagesprogramm(params) {
       <header class="tp-dc-head">
         <div class="tp-dc-num"><span class="tp-dc-num-l">Schultag</span><strong>${idx + 1}</strong><span class="tp-dc-of">/ ${days.length}</span></div>
         <div class="tp-dc-when">
-          <span class="tp-dc-klasse">Klasse ${escapeHtml(klasse.id)}</span>
+          <span class="tp-dc-eyebrow">Berufskundeunterricht Sanitär · Klasse ${escapeHtml(klasse.id)}</span>
           <span class="tp-dc-wd">${escapeHtml(weekdayLang(dayDate))}</span>
           <span class="tp-dc-date">${escapeHtml(formatLang(dayDate))}</span>
         </div>
+        ${navHtml}
       </header>`;
-    let html = head + buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
-    html += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
+    let body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
+    body += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
     if (!hasContent) {
-      html += `<div class="tp-empty tp-empty-inline"><svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><h3>Dieser Schultag ist noch nicht geplant</h3></div>`;
+      body += `<div class="tp-empty tp-empty-inline"><svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><h3>Dieser Schultag ist noch nicht geplant</h3></div>`;
     } else {
-      html += buildExtrasHtml(content);
+      body += buildExtrasHtml(content);
     }
-    html += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste");
-    html += buildPruefungVorabHtml(klasseId, days, idx);
-    dayHost.innerHTML = `<article class="tp-daycard">${html}</article>`;
+    body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste");
+    body += buildPruefungVorabHtml(klasseId, days, idx);
+    dayHost.innerHTML = `<article class="tp-daycard">${head}<div class="tp-dc-body">${body}</div></article>`;
     // Lernziele aus-/einklappen (runde Buttons)
     dayHost.querySelectorAll(".lz-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -820,11 +820,12 @@ function renderTagesprogramm(params) {
   // Kachel-Übersicht aller Schultage
   if (days.length) $("#tp-weitere").innerHTML = buildTilesHtml(klasseId, days, idx, heute);
 
-  // Interaktion
-  $("#tp-today").addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}`; route(); });
-  $("#tp-sem").addEventListener("click", () => { const a = $("#weitere-anchor"); if (a) a.scrollIntoView({ behavior: "smooth", block: "start" }); });
-  if (idx > 0) $("#tp-prev").addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx - 1]}`; });
-  if (idx >= 0 && idx < days.length - 1) $("#tp-next").addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx + 1]}`; });
+  // Interaktion (Nav ist nur vorhanden, wenn ein Schultag-Kopf gerendert wurde)
+  const todayBtn = $("#tp-today"), semBtn = $("#tp-sem"), prevBtn = $("#tp-prev"), nextBtn = $("#tp-next");
+  if (todayBtn) todayBtn.addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}`; route(); });
+  if (semBtn) semBtn.addEventListener("click", () => { const a = $("#weitere-anchor"); if (a) a.scrollIntoView({ behavior: "smooth", block: "start" }); });
+  if (prevBtn && idx > 0) prevBtn.addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx - 1]}`; });
+  if (nextBtn && idx >= 0 && idx < days.length - 1) nextBtn.addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx + 1]}`; });
 
   // Embed-Modus: ganzen Schultag in die sichtbare iframe-Höhe einpassen
   // (direkt, nach dem nächsten Frame und sobald die Fonts geladen sind – Metriken ändern sich sonst).
@@ -957,7 +958,7 @@ function exportSemesterPdf(klasseId) {
     <section class="pdfpage">
       ${logo}
       <div class="pdfpage-body">${body}</div>
-      <div class="pdfpage-foot">${footPrefix} | Seite ${i + 1} von ${total}</div>
+      <div class="pdfpage-foot"><span class="pdfpage-foot-l">${footPrefix}</span><span class="pdfpage-foot-r">Seite ${i + 1} von ${total}</span></div>
     </section>`).join("");
 
   const wrap = el(`<div class="print-archiv">${pagesHtml}</div>`);
@@ -967,8 +968,15 @@ function exportSemesterPdf(klasseId) {
   document.title = `${klasse.id}_${klasse.semester}.Semester_Archiv`;
   const cleanup = () => { if (document.body.contains(wrap)) wrap.remove(); document.body.classList.remove("printing-archiv"); document.title = prevTitle; window.removeEventListener("afterprint", cleanup); };
   window.addEventListener("afterprint", cleanup);
-  window.print();
-  setTimeout(cleanup, 60000);
+  // Erst drucken, wenn das Logo geladen ist (sonst fehlt es beim ersten Mal im PDF)
+  let printed = false;
+  const doPrint = () => { if (printed) return; printed = true; window.print(); setTimeout(cleanup, 60000); };
+  const probe = new Image();
+  probe.onload = doPrint;
+  probe.onerror = doPrint;
+  probe.src = "assets/img/gbssg-logo-text.png";
+  if (probe.complete) doPrint();           // bereits im Cache
+  setTimeout(doPrint, 1500);               // Sicherheitsnetz, falls load nie feuert
 }
 
 // "Label | URL" je Zeile → in links und pdfs aufteilen

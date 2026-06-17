@@ -2604,31 +2604,46 @@ body.has-overlay { overflow: hidden; }
   color: var(--brand-darker); letter-spacing: -0.01em;
 }
 
-/* Tageskachel: der komplette Schultag kompakt in EINER Karte */
+/* Tageskachel: der komplette Schultag in EINER Karte.
+   Kopf = durchgehend schwarzer Balken (volle Kartenbreite) mit Titel, Klasse,
+   Schultag und Navigation; darunter der weisse Inhaltsbereich. */
 .tp-daycard {
   background: var(--paper);
-  border: 1px solid var(--border); border-top: 4px solid var(--brand);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--space-4);
+  padding: 0;
+  overflow: hidden;
   box-shadow: var(--shadow-2);
 }
 .tp-dc-head {
-  display: flex; align-items: center; gap: var(--space-3);
-  padding-bottom: var(--space-3); margin-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border-soft);
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4);
+  background: var(--ink); color: #fff;
+  padding: var(--space-4);
 }
+.tp-dc-body { padding: var(--space-4); }
 .tp-dc-num {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   flex-shrink: 0; width: 54px; padding: 6px 0;
-  background: var(--ink); color: #fff; border-radius: var(--radius); line-height: 1;
+  background: var(--brand); color: var(--ink); border-radius: var(--radius); line-height: 1;
 }
-.tp-dc-num-l { font-size: 0.54rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; opacity: .8; }
+.tp-dc-num-l { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; opacity: .85; }
 .tp-dc-num strong { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; margin: 2px 0 1px; }
-.tp-dc-of { font-size: 0.6rem; opacity: .65; }
-.tp-dc-when { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
-.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; color: var(--ink); }
-.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: var(--ink-soft); }
-.tp-dc-thema { margin-top: 2px; font-size: 0.86rem; font-weight: 600; color: var(--brand-darker); }
+.tp-dc-of { font-size: 0.6rem; opacity: .7; }
+.tp-dc-when { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 1px; }
+.tp-dc-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand); }
+.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: #fff; }
+.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: rgba(255, 255, 255, 0.72); }
+.tp-dc-thema { margin-top: 2px; font-size: 0.86rem; font-weight: 600; color: var(--brand); }
+
+/* Navigation im schwarzen Kopfbalken (für dunklen Hintergrund umgefärbt) */
+.tp-dc-head .tp-nav { margin-left: auto; }
+.tp-dc-head .tp-nav-group { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.22); }
+.tp-dc-head .tp-navbtn { color: rgba(255, 255, 255, 0.82); }
+.tp-dc-head .tp-navbtn-mid { color: #fff; }
+.tp-dc-head .tp-navbtn + .tp-navbtn { border-left-color: rgba(255, 255, 255, 0.22); }
+.tp-dc-head .tp-navbtn:hover:not([disabled]) { background: rgba(255, 255, 255, 0.14); color: #fff; }
+.tp-dc-head .tp-navlink { color: rgba(255, 255, 255, 0.85); border-color: rgba(255, 255, 255, 0.25); background: transparent; }
+.tp-dc-head .tp-navlink:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.45); }
 .tp-dc-label {
   font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--ink-quiet); margin: 0 0 var(--space-2);
@@ -2711,10 +2726,10 @@ body.is-embed .view {
   width: 100%;
   max-width: 1040px;
 }
-body.is-embed .tp-bar { margin-bottom: var(--space-3); }
 body.is-embed .tp-banner { padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
-body.is-embed .tp-daycard { padding: var(--space-3) var(--space-4); }
-body.is-embed .tp-dc-head { padding-bottom: var(--space-2); margin-bottom: var(--space-2); }
+body.is-embed .tp-daycard { padding: 0; }
+body.is-embed .tp-dc-head { padding: var(--space-3) var(--space-4); }
+body.is-embed .tp-dc-body { padding: var(--space-3) var(--space-4); }
 body.is-embed .tp-daycard .tp-dc-label { margin: var(--space-3) 0 var(--space-2); }
 body.is-embed .tp-daycard .tp-section-label { margin: var(--space-3) 0 var(--space-2); }
 /* Etwas kompaktere Lektionszeilen → weniger Skalierung nötig, besser lesbar */
@@ -2930,8 +2945,10 @@ body.is-embed .lz-btn-inline { margin-top: 7px; }
 .pdfpage-title p { font-size: 0.95rem; color: var(--ink-soft); line-height: 1.5; }
 .pdfpage-foot {
   margin-top: auto; padding-top: 4mm; border-top: 1px solid #999;
-  font-size: 8pt; color: #555; text-align: center; letter-spacing: 0.01em;
+  font-size: 8pt; color: #555; letter-spacing: 0.01em;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8mm; width: 100%;
 }
+.pdfpage-foot-r { white-space: nowrap; }
 
 @media print {
   .sidebar, .mobile-topbar, .bottomnav, .footer, .filterbar, .cta-row, .modal, .tp-nav, .tp-tiles { display: none !important; }
