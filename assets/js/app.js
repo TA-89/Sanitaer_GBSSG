@@ -1373,16 +1373,33 @@ async function route() {
   $("#view").innerHTML = `<div class="empty"><h2>Seite nicht gefunden</h2><p><a href="#/">Zur Startseite</a></p></div>`;
 }
 
-// Sidebar einmalig initialisieren (Klassen-Dropdown füllen + verdrahten)
+// Sidebar ein-/ausklappen (Zustand merken; Standard = ausgeklappt)
+const SIDEBAR_KEY = "sanigbs:sidebar-collapsed:v1";
+function applySidebarState() {
+  let collapsed = false;
+  try { collapsed = localStorage.getItem(SIDEBAR_KEY) === "1"; } catch {}
+  document.body.classList.toggle("sidebar-collapsed", collapsed);
+}
+
+// Sidebar einmalig initialisieren (Klassen-Dropdown füllen + Toggle verdrahten)
 let _shellInited = false;
 function initShell() {
+  applySidebarState();
   if (_shellInited) return;
   const sel = $("#sb-klasse");
   if (sel && allKlassen().length) {
     sel.innerHTML = klasseOptionsHtml(getActiveKlasseId());
     sel.addEventListener("change", () => applyKlasse(sel.value));
-    _shellInited = true;
   }
+  const toggle = $("#sidebar-toggle");
+  if (toggle) {
+    toggle.addEventListener("click", () => {
+      const collapsed = !document.body.classList.contains("sidebar-collapsed");
+      document.body.classList.toggle("sidebar-collapsed", collapsed);
+      try { localStorage.setItem(SIDEBAR_KEY, collapsed ? "1" : "0"); } catch {}
+    });
+  }
+  if (sel || toggle) _shellInited = true;
 }
 
 function updateActiveNav() {

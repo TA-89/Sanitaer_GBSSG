@@ -12,7 +12,7 @@
   <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700,800,900&display=swap" rel="stylesheet" />
   <!-- Mono (für Codes / Auftragsnummern / Daten) -->
   <link href="https://fonts.bunny.net/css?family=jetbrains-mono:400,500,600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/main.css?v=2" />
+  <link rel="stylesheet" href="assets/css/main.css?v=3" />
 </head>
 <body>
   <a href="#main" class="skip-link">Zum Inhalt springen</a>
@@ -20,15 +20,20 @@
   <div class="layout">
     <!-- Linke Sidebar: Primärnavigation (Desktop/Tablet) -->
     <aside class="sidebar" role="navigation" aria-label="Hauptnavigation">
-      <a href="#/" class="brand" data-link aria-label="GBS St. Gallen – Tagesprogramm">
-        <span class="brand-logo">
-          <img src="assets/img/gbs-logo.png" alt="GBS St. Gallen" />
-        </span>
-        <span class="brand-text">
-          <strong>Sanitär GBS</strong>
-          <small>Lernplattform</small>
-        </span>
-      </a>
+      <div class="sidebar-top">
+        <a href="#/" class="brand" data-link aria-label="GBS St. Gallen – Tagesprogramm">
+          <span class="brand-logo">
+            <img src="assets/img/gbs-logo.png" alt="GBS St. Gallen" />
+          </span>
+          <span class="brand-text">
+            <strong>Sanitär GBS</strong>
+            <small>Lernplattform</small>
+          </span>
+        </a>
+        <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Navigation ein-/ausklappen" title="Navigation ein-/ausklappen">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M14 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
 
       <div class="sidebar-klasse">
         <label class="sidebar-label" for="sb-klasse">Klasse</label>
@@ -39,19 +44,19 @@
       </div>
 
       <nav class="sidenav" aria-label="Bereiche">
-        <a href="#/" data-link data-nav="tagesprogramm">
+        <a href="#/" data-link data-nav="tagesprogramm" title="Tagesprogramm">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <span>Tagesprogramm</span>
         </a>
-        <a href="#/suche" data-link data-nav="suche">
+        <a href="#/suche" data-link data-nav="suche" title="Lernaufträge">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <span>Lernaufträge</span>
         </a>
-        <a href="#/ablauf" data-link data-nav="entdecken">
+        <a href="#/ablauf" data-link data-nav="entdecken" title="Ablauf der Lehre">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 4v13a3 3 0 0 0 3 3h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="6" cy="4" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="13" cy="20" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="18" cy="11" r="2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
           <span>Ablauf der Lehre</span>
         </a>
-        <a href="#/kompetenzen" data-link data-nav="kompetenzen">
+        <a href="#/kompetenzen" data-link data-nav="kompetenzen" title="Kompetenzen">
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 5h16v4H4zM4 11h16v4H4zM4 17h16v3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           <span>Kompetenzen</span>
         </a>
@@ -136,6 +141,6 @@
 
   <!-- Externe Bibliotheken: Fuse.js (Suche), PDF.js (nur für Vorschau-Thumbnails) per CDN -->
   <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js"></script>
-  <script type="module" src="assets/js/app.js?v=2"></script>
+  <script type="module" src="assets/js/app.js?v=3"></script>
 </body>
 </html>

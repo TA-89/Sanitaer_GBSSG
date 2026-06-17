@@ -176,8 +176,26 @@ p { margin: 0 0 var(--space-4); color: var(--ink-soft); }
   padding: var(--space-5) var(--space-4);
   background: var(--paper);
   border-right: 1px solid var(--border);
+  transition: width .18s ease, padding .18s ease;
 }
-.sidebar .brand { padding: 0 var(--space-2) var(--space-2); }
+.sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: 0 var(--space-2) var(--space-2); }
+.sidebar .brand { padding: 0; min-width: 0; }
+.sidebar-toggle {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-soft); color: var(--ink-soft);
+  display: grid; place-items: center; cursor: pointer; transition: background .15s, transform .18s;
+}
+.sidebar-toggle:hover { background: var(--sand); color: var(--ink); }
+
+/* Eingeklappt: schmale Icon-Leiste (mehr Platz fürs Tagesprogramm, ideal für Teams) */
+body.sidebar-collapsed .sidebar { width: 60px; padding-left: 8px; padding-right: 8px; }
+body.sidebar-collapsed .sidebar-top { flex-direction: column; gap: var(--space-3); padding: 0 0 var(--space-2); }
+body.sidebar-collapsed .brand-text { display: none; }
+body.sidebar-collapsed .sidebar-klasse { display: none; }
+body.sidebar-collapsed .sidenav a { justify-content: center; padding: 11px 0; }
+body.sidebar-collapsed .sidenav a span { display: none; }
+body.sidebar-collapsed .sidebar-foot { display: none; }
+body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 
 .sidebar-klasse { display: flex; flex-direction: column; gap: 6px; }
 .sidebar-label {
