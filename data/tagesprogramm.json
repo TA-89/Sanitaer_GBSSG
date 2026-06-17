@@ -1,0 +1,1219 @@
+{
+  "version": "2.1",
+  "stand": "2026-06-16",
+  "hinweis": "Unterrichtsinhalte je Klasse und Schultag (ISO-Datum = berechneter Schultag). Pro Schultag: thema (Überthema), 5 Lektionen (thema/material/notizen), lernauftraege (ids aus auftraege.json), hausaufgabenFaellig (auf diesen Tag zu lösen) und hausaufgabenNaechste (auf nächste Woche). Hausaufgaben haben text + fotos (Foto-Upload folgt im Lehrer-Editor, Phase 2). Beispieldaten SAIb26-30 stammen vereinfacht aus den GBS-Unterrichtsplanungen 1. Semester (SE01–SE18).",
+  "klassen": {
+    "SAIb26-30": {
+      "schultage": {
+        "2026-08-14": {
+          "lektionen": [
+            {
+              "thema": "Begrüssung, Vorstellung & Kennenlernen",
+              "material": [],
+              "notizen": "Start ins 1. Lehrjahr, Vorstellung der Klassenlehrperson, Kennenlernrunde."
+            },
+            {
+              "thema": "Schule & Logins einrichten",
+              "material": [
+                "Convertible",
+                "Login-Daten"
+              ],
+              "notizen": "Präsentation der Schule, Login myGBS / NESA, Convertible installieren."
+            },
+            {
+              "thema": "Microsoft Teams & Ordnerstruktur",
+              "material": [
+                "Teams"
+              ],
+              "notizen": "Teams-Funktionen, Ordnerstruktur, Start mit Lernauftrag 1.12."
+            },
+            {
+              "thema": "OneDrive & NESA einrichten",
+              "material": [
+                "OneDrive"
+              ],
+              "notizen": "OneDrive einrichten und bearbeiten, NESA kennenlernen."
+            },
+            {
+              "thema": "Leistungsnachweis 1.12",
+              "material": [],
+              "notizen": "Selbstständige Arbeit am Leistungsnachweis."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Lernauftrag 1.12 (Leistungsnachweis) fertigstellen. Taschenrechner auf den nächsten Schultag mitnehmen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "ICT-Grundlagen & Schulstart",
+              "auftrag": "1.12"
+            },
+            {
+              "titel": "ICT-Grundlagen & Schulstart",
+              "auftrag": "1.12"
+            }
+          ]
+        },
+        "2026-08-21": {
+          "lektionen": [
+            {
+              "thema": "Wasser und seine besonderen Eigenschaften",
+              "material": [
+                "Einstiegsfilm",
+                "suissetec edu"
+              ],
+              "notizen": "Sichtung IT & 1.12-LNW, Einstiegsfilm, Aufgaben 1–5."
+            },
+            {
+              "thema": "Spezielle Eigenschaften von Wasser",
+              "material": [],
+              "notizen": "Aufgabe 6 bearbeiten."
+            },
+            {
+              "thema": "Wasserkreislauf & Verteilung auf der Erde",
+              "material": [],
+              "notizen": "Aufgaben 7–9."
+            },
+            {
+              "thema": "Sinn vom Rechnen",
+              "material": [
+                "Formelbuch"
+              ],
+              "notizen": "Auftrag 1, Kapitel 1, Seite 6–11."
+            },
+            {
+              "thema": "SI-Einheiten umrechnen",
+              "material": [
+                "Taschenrechner",
+                "1.1_Übungen_1"
+              ],
+              "notizen": "SI-Einheiten, Übungen Stufe 1–3."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Lernauftrag 1.12 (Leistungsnachweis) fertigstellen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übungen 1.1 Stufe 1–3 fertigstellen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Trinkwasser – Eigenschaften & Gewinnung",
+              "auftrag": "1.4"
+            },
+            {
+              "titel": "Masse & Einheiten berechnen",
+              "auftrag": "1.1"
+            }
+          ]
+        },
+        "2026-08-28": {
+          "lektionen": [
+            {
+              "thema": "Wasser-Repetition & Wasserkreislauf",
+              "material": [
+                "Film"
+              ],
+              "notizen": "Besprechung Fragen 1–5, der Wasserkreislauf."
+            },
+            {
+              "thema": "Wasservorkommen auf der Erde",
+              "material": [],
+              "notizen": "Zeichnung Frage 6, Bearbeitung Fragen 8–9."
+            },
+            {
+              "thema": "Richtlinie SVGW W3",
+              "material": [
+                "W3-Richtlinie",
+                "suissetec edu"
+              ],
+              "notizen": "Vorstellung W3, Fragen 10–13, Theorie S.9–11."
+            },
+            {
+              "thema": "Masse & Flächen berechnen",
+              "material": [
+                "1.1_Übungen_1"
+              ],
+              "notizen": "Kontrolle Übungen, Start Auftrag 4."
+            },
+            {
+              "thema": "Höhenmasse",
+              "material": [],
+              "notizen": "Vorstellung Höhenmasse (Auftrag 5), Übungen 1–2."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Übungen 1.1 Stufe 1–3 fertigstellen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Lernauftrag 1.4 bis und mit Frage 13 fertigstellen. Übung 1 (a–c) und 2 (a–c) lösen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Trinkwasser & Hygiene",
+              "auftrag": "1.4"
+            },
+            {
+              "titel": "Masse & Flächen berechnen",
+              "auftrag": "1.1"
+            }
+          ]
+        },
+        "2026-09-04": {
+          "lektionen": [
+            {
+              "thema": "Trinkwasser-Quiz",
+              "material": [],
+              "notizen": "Einstieg mit Quiz, Fragen 14–17."
+            },
+            {
+              "thema": "Auftrag 4 & Theorie",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Theorie S.13–18, Start Auftrag 4."
+            },
+            {
+              "thema": "Leistungsnachweis 1.4",
+              "material": [],
+              "notizen": "Arbeit am Leistungsnachweis Trinkwassergewinnung."
+            },
+            {
+              "thema": "Flächenberechnung Übung 3 & 4",
+              "material": [],
+              "notizen": "Kontrolle Auftrag 5, Übungen 3 + 4 (A–E)."
+            },
+            {
+              "thema": "Flächenberechnung & Formeln",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Formeln ergänzen, Aufgaben 11 + 12."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Lernauftrag 1.4 bis und mit Frage 13 fertigstellen. Übung 1 (a–c) und 2 (a–c) lösen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "GrafIZ «Funktion der Wasserversorgung» erstellen. Lernauftrag 1.4 / Auftrag 4 in Teams abgeben. Lernauftrag 1.1 bis Flächenberechnung S.11 fertigstellen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Wasserhygiene & Trinkwasser",
+              "auftrag": "1.4"
+            },
+            {
+              "titel": "Flächenberechnung",
+              "auftrag": "1.1"
+            }
+          ]
+        },
+        "2026-09-11": {
+          "lektionen": [
+            {
+              "thema": "Wasserversorgung",
+              "material": [
+                "Filme",
+                "suissetec edu"
+              ],
+              "notizen": "Theorie «Kaltwasserversorgung» Kap. 2.2–2.6, Repetitionsfragen S.25."
+            },
+            {
+              "thema": "Werkleitungen im Labor",
+              "material": [],
+              "notizen": "Sichtung Werkleitungen, Lernauftrag 1.4 Fragen 18–23."
+            },
+            {
+              "thema": "Lernauftrag 1.4 abschliessen",
+              "material": [],
+              "notizen": "Auftrag 1.4 fertig, Üben für Prüfung 1.4."
+            },
+            {
+              "thema": "Flächenberechnung Auftrag 7",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Kontrolle Auftrag 7, Aufgaben 13–14."
+            },
+            {
+              "thema": "Formelblatt erstellen",
+              "material": [
+                "1.1_Übungen_2"
+              ],
+              "notizen": "Flächenberechnungen, PDF mit den gängigsten Formeln erstellen."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "GrafIZ «Funktion der Wasserversorgung» erstellen. Lernauftrag 1.4 / Auftrag 4 in Teams abgeben. Lernauftrag 1.1 bis Flächenberechnung S.11 fertigstellen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übungen 1.1_2 (1–6) fertigstellen und selbst korrigieren. Für die Prüfung 1.4 (Kaltwasserversorgung) lernen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Kaltwasserversorgung",
+              "auftrag": "1.4"
+            },
+            {
+              "titel": "Flächenberechnung",
+              "auftrag": "1.1"
+            }
+          ]
+        },
+        "2026-09-18": {
+          "lektionen": [
+            {
+              "thema": "Kunststoffe kennenlernen",
+              "material": [
+                "Musterstücke"
+              ],
+              "notizen": "Diskussion «Plastik», Filme zu Kunststoffarten, Sichtung."
+            },
+            {
+              "thema": "Lernauftrag 1.5 starten",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Theorie S.45–50, Repetitionsaufgaben 41–49, Fragen 1+2."
+            },
+            {
+              "thema": "Gruppenarbeit 1.5 & Prüfung 1.4",
+              "material": [],
+              "notizen": "Gruppenarbeit zu 1.5, Prüfung 1.4 (keine Hilfsmittel)."
+            },
+            {
+              "thema": "Flächenberechnung Auftrag 8",
+              "material": [
+                "1.1_Übungen_2/3"
+              ],
+              "notizen": "Aufgaben 15–17, weitere Übungen."
+            },
+            {
+              "thema": "Einheiten umrechnen – Vorbereitung",
+              "material": [],
+              "notizen": "Übung 3 abschliessen, Üben für Prüfung «Einheiten umrechnen»."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Übungen 1.1_2 (1–6) fertigstellen und selbst korrigieren. Für die Prüfung 1.4 lernen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übungen 1.1_3 fertigstellen und selbst korrigieren. Für die Prüfung «Einheiten umrechnen» lernen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Leitungsmaterialien: Kunststoff",
+              "auftrag": "1.5"
+            },
+            {
+              "titel": "Masse & Flächen berechnen",
+              "auftrag": "1.1"
+            }
+          ],
+          "pruefung": {
+            "titel": "Prüfung 1.4 – Kaltwasserversorgung",
+            "auftrag": "1.4"
+          }
+        },
+        "2026-09-25": {
+          "lektionen": [
+            {
+              "thema": "Prüfung Masseinheiten",
+              "material": [],
+              "notizen": "Prüfung «Einheiten umrechnen», Besprechung Prüfung 1.4."
+            },
+            {
+              "thema": "Stahlrohrsysteme",
+              "material": [
+                "Film"
+              ],
+              "notizen": "Auftrag 1.5 Fragen 1–12, Herstellung von Stahlrohren."
+            },
+            {
+              "thema": "Verbundrohrsysteme",
+              "material": [],
+              "notizen": "Fragen 13–17, selbstständige Bearbeitung 19–22."
+            },
+            {
+              "thema": "Arbeitssicherheit & PSA",
+              "material": [
+                "SUVA-Bericht",
+                "1.3_PSA_Übersicht"
+              ],
+              "notizen": "Diskussion Arbeitssicherheit, PSA, Fragen 1+2."
+            },
+            {
+              "thema": "10 Grundregeln der Arbeitssicherheit",
+              "material": [],
+              "notizen": "Die 10 Grundregeln, Leistungsnachweis 1.3 erklärt."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Übungen 1.1_3 fertigstellen und selbst korrigieren. Für die Prüfung «Einheiten umrechnen» lernen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Lernauftrag 1.5, Fragen 1–22 fertigstellen. Danach folgen die Herbstferien (27.09.–18.10.).",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Leitungsmaterialien: Metall",
+              "auftrag": "1.5"
+            },
+            {
+              "titel": "Arbeitssicherheit & PSA",
+              "auftrag": "1.3"
+            }
+          ],
+          "pruefung": {
+            "titel": "Prüfung «Einheiten umrechnen»",
+            "auftrag": "1.1"
+          }
+        },
+        "2026-10-23": {
+          "lektionen": [
+            {
+              "thema": "Lernauftrag 1.5 abschliessen",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Kontrolle Fragen 1–24, Theorie S.33–34."
+            },
+            {
+              "thema": "Leistungsnachweis 1.5",
+              "material": [],
+              "notizen": "Arbeit am LNW 1.5, Üben für Prüfung 1.5."
+            },
+            {
+              "thema": "PSA & Arbeitssicherheit vertiefen",
+              "material": [
+                "Videos"
+              ],
+              "notizen": "Auftrag 1.3 Fragen 3–6, Theorie S.12–17."
+            },
+            {
+              "thema": "Gefahren von Strom",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Stromkreislauf, Personen- und Sachschutz, Fragen 7–9, Auftrag 5."
+            },
+            {
+              "thema": "Chemikalien & Gefahren",
+              "material": [
+                "ChemieInfo.ch"
+              ],
+              "notizen": "Selbstständige Wissensbeschaffung."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Lernauftrag 1.5, Fragen 1–22 fertigstellen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Leistungsnachweis 1.5 bis am 30.10. abgeben. Für die Prüfung 1.5 lernen (in zwei Wochen, 06.11.).",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Materialien & Repetition",
+              "auftrag": "1.5"
+            },
+            {
+              "titel": "Arbeitssicherheit & Strom",
+              "auftrag": "1.3"
+            }
+          ]
+        },
+        "2026-10-30": {
+          "lektionen": [
+            {
+              "thema": "Lernzielkontrolle 1.3",
+              "material": [],
+              "notizen": "Lernzielkontrolle, Auftrag 1.3 abschliessen."
+            },
+            {
+              "thema": "Leistungsnachweis",
+              "material": [],
+              "notizen": "Arbeit am Leistungsnachweis."
+            },
+            {
+              "thema": "Üben für Prüfung 1.5",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Repetitionsfragen zum Üben."
+            },
+            {
+              "thema": "Technisches Zeichnen: Normschrift",
+              "material": [
+                "1.2_Übungen_1"
+              ],
+              "notizen": "Theorie Normschrift S.11–15, Start Plankopf."
+            },
+            {
+              "thema": "Plankopf zeichnen",
+              "material": [
+                "1.2_Übungen_2"
+              ],
+              "notizen": "Einführung Plankopf, Übungen 1.2_2."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Leistungsnachweis 1.5 bis am 30.10. abgeben. Für die Prüfung 1.5 lernen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Für die Prüfung 1.5 üben.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Repetition & Leistungsnachweis",
+              "auftrag": "1.5"
+            },
+            {
+              "titel": "Technisches Zeichnen: Normschrift",
+              "auftrag": "1.2"
+            }
+          ]
+        },
+        "2026-11-06": {
+          "lektionen": [
+            {
+              "thema": "Prüfung 1.5 & Partnerinterview",
+              "material": [],
+              "notizen": "Prüfung 1.5 (keine Hilfsmittel), Start Partnerinterview."
+            },
+            {
+              "thema": "Einstieg Abwasserentsorgung",
+              "material": [],
+              "notizen": "Abwasserentsorgung, Abschluss Partnerinterview."
+            },
+            {
+              "thema": "Lernauftrag 1.6 starten",
+              "material": [],
+              "notizen": "Spiel «Bezeichnungen zuordnen», Start Lernauftrag 1.6."
+            },
+            {
+              "thema": "Rohrsysteme & Vermassung",
+              "material": [
+                "VideoCasts"
+              ],
+              "notizen": "Rohrsysteme, Vermassungsübung, Weiterarbeit 1.2."
+            },
+            {
+              "thema": "Isometrie-Übung",
+              "material": [
+                "1.2_Übungen_4"
+              ],
+              "notizen": "Vermassungsübung abgeben, Auftrag 4 Theorie S.21–22."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Für die Prüfung 1.5 üben.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Vermassungsübung fertigstellen (mindestens 2 Blätter).",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Abwasser & Entsorgung",
+              "auftrag": "1.6"
+            },
+            {
+              "titel": "Isometrie & Vermassung",
+              "auftrag": "1.2"
+            }
+          ],
+          "pruefung": {
+            "titel": "Prüfung 1.5 – Leitungsmaterialien",
+            "auftrag": "1.5"
+          }
+        },
+        "2026-11-13": {
+          "lektionen": [
+            {
+              "thema": "Polyethylenrohre & Schweissen",
+              "material": [],
+              "notizen": "Schweissübung, Herstellung von Polyethylenrohren."
+            },
+            {
+              "thema": "Vorträge vorbereiten",
+              "material": [],
+              "notizen": "Gruppen-Vorträge zu Werkstoffen vorbereiten."
+            },
+            {
+              "thema": "Vorträge & MindMap Gusseisen",
+              "material": [],
+              "notizen": "Vorstellung Vorträge, Lernauftrag 1.6, MindMap Gusseisen."
+            },
+            {
+              "thema": "Technisches Zeichnen 1.2_4",
+              "material": [
+                "1.2_Übungen_4"
+              ],
+              "notizen": "Theorie S.21–22, Übung 4."
+            },
+            {
+              "thema": "Übung 1.2_4 & Leistungsnachweis",
+              "material": [],
+              "notizen": "Arbeit an 1.2-Leistungsnachweis Teil 1."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Vermassungsübung fertigstellen (mindestens 2 Blätter).",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "MindMap «Gusseisen & Verbindungen» fertigstellen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Entsorgungsleitungen: Verbindungen",
+              "auftrag": "1.6"
+            },
+            {
+              "titel": "Technisches Zeichnen",
+              "auftrag": "1.2"
+            }
+          ]
+        },
+        "2026-11-20": {
+          "lektionen": [
+            {
+              "thema": "Leitungsteile & Theorie",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Kahoot, Theorie S.18–20, Fragen 6–11."
+            },
+            {
+              "thema": "Bezeichnung der Leitungsteile",
+              "material": [
+                "Video"
+              ],
+              "notizen": "Kontrolle Fragen 6–11, Auftrag 4 Fragen 12–15."
+            },
+            {
+              "thema": "Gewichtskraft",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Repetitionsfragen S.21, Einstieg Gewichtskraft (Auftrag 5)."
+            },
+            {
+              "thema": "Leistungsnachweis 1.2",
+              "material": [],
+              "notizen": "Besprechung LNW 1.2, Übungen 4 fertigstellen."
+            },
+            {
+              "thema": "Übungen 1.2_6",
+              "material": [],
+              "notizen": "Auftrag 4, Übungen 6 bis Aufgabe «Hans»."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "MindMap «Gusseisen & Verbindungen» fertigstellen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übungen 1.2_4 fertigstellen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Entsorgungsleitungen: Befestigung",
+              "auftrag": "1.6"
+            },
+            {
+              "titel": "Gewichtskraft & Zeichnen",
+              "auftrag": "1.2"
+            }
+          ]
+        },
+        "2026-11-27": {
+          "lektionen": [
+            {
+              "thema": "Wer wird Millionär – Repetition",
+              "material": [],
+              "notizen": "Einstieg, Aufgaben 19–22."
+            },
+            {
+              "thema": "Übungen 1.6_1",
+              "material": [
+                "1.6_Übungen_1"
+              ],
+              "notizen": "Start mit den Übungen 1.6_1."
+            },
+            {
+              "thema": "Lernzielkontrolle 1.6",
+              "material": [],
+              "notizen": "Lernzielkontrolle Auftrag 1.6, Weiterarbeit Übungen."
+            },
+            {
+              "thema": "Übungen 1.2_6 (10–18)",
+              "material": [],
+              "notizen": "Weiterarbeit an den Zeichnungs-Übungen."
+            },
+            {
+              "thema": "Leistungsnachweis Teil 1 & 2",
+              "material": [],
+              "notizen": "Arbeit am Leistungsnachweis, Ausblick Prüfung 1.6."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Übungen 1.2_4 fertigstellen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Für die Prüfung 1.6 lernen. Übungen 1.6_1 fertigstellen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Repetition Abwasser",
+              "auftrag": "1.6"
+            },
+            {
+              "titel": "Normprojektion",
+              "auftrag": "1.2"
+            }
+          ]
+        },
+        "2026-12-04": {
+          "lektionen": [
+            {
+              "thema": "Entwässerungsgegenstände",
+              "material": [],
+              "notizen": "Gruppierungsübung, Begriffe in 2er-Gruppen, Präsentation."
+            },
+            {
+              "thema": "Lernauftrag 1.8 starten",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Aufgaben 1–7, Info zum Auftrag."
+            },
+            {
+              "thema": "Leistungsnachweis 1.8: Armaturengruppen",
+              "material": [],
+              "notizen": "A3-Übersicht der Armaturengruppen, Abgabe LNW 1.8."
+            },
+            {
+              "thema": "Zeichnungs-Übungen 1.2_6",
+              "material": [],
+              "notizen": "Übungen 6 (10–18) fertigstellen."
+            },
+            {
+              "thema": "Leistungsnachweis 1.2 Teil 2",
+              "material": [],
+              "notizen": "Weiterarbeit, Ausblick Prüfung 1.6."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Für die Prüfung 1.6 lernen. Übungen 1.6_1 fertigstellen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übungen 1.2_6 (10–18) fertigstellen. Für die Prüfung 1.6 üben.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Sanitärapparate",
+              "auftrag": "1.8"
+            },
+            {
+              "titel": "Technisches Zeichnen",
+              "auftrag": "1.2"
+            }
+          ]
+        },
+        "2026-12-11": {
+          "lektionen": [
+            {
+              "thema": "Prüfung 1.6",
+              "material": [
+                "Formelbuch",
+                "Taschenrechner"
+              ],
+              "notizen": "Prüfung 1.6."
+            },
+            {
+              "thema": "Spülsysteme – Theorie",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Auftrag 3, Theorie lesen, Fragen 8–17."
+            },
+            {
+              "thema": "Spülauslösung",
+              "material": [
+                "Video"
+              ],
+              "notizen": "Kontrolle Fragen 8–17, Fragen 18–20."
+            },
+            {
+              "thema": "Übungen & Prüfungsvorbereitung",
+              "material": [],
+              "notizen": "Übungen 4 & 6, Üben für Prüfung."
+            },
+            {
+              "thema": "Leistungsnachweise Teil 1–3",
+              "material": [],
+              "notizen": "Arbeit an Leistungsnachweisen, Üben für Prüfung."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Übungen 1.2_6 (10–18) fertigstellen. Für die Prüfung 1.6 üben.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Keine Hausaufgaben.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Sanitärapparate & Spülsysteme",
+              "auftrag": "1.8"
+            },
+            {
+              "titel": "Prüfungsvorbereitung Zeichnen",
+              "auftrag": "1.2"
+            }
+          ],
+          "pruefung": {
+            "titel": "Prüfung 1.6 – Entsorgungsleitungen",
+            "auftrag": "1.6"
+          }
+        },
+        "2026-12-18": {
+          "lektionen": [
+            {
+              "thema": "Urinoirmodelle & Steuerungen",
+              "material": [],
+              "notizen": "Eigenes Thema erarbeiten (Gruppen 1–5)."
+            },
+            {
+              "thema": "Marktplatz & Abschluss 1.8",
+              "material": [],
+              "notizen": "Rotation auf dem Marktplatz, Abschluss Auftrag 1.8."
+            },
+            {
+              "thema": "Leistungsnachweis 1.2 abschliessen",
+              "material": [],
+              "notizen": "Abschluss LNW 1.2, Teil 1–3."
+            },
+            {
+              "thema": "Prüfungsvorbereitung 1.2",
+              "material": [],
+              "notizen": "Individuelle Vorbereitung, Weiterarbeit Übungen."
+            },
+            {
+              "thema": "Rückblick 1. Semester",
+              "material": [],
+              "notizen": "Umfrage und Diskussionsrunde zum 1. Semester."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Keine Hausaufgaben.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Lernauftrag 1.8 abschliessen. Für die Prüfung 1.2 lernen (08.01.). Danach folgen die Weihnachtsferien (20.12.–03.01.).",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Urinoirsysteme & Rückblick",
+              "auftrag": "1.8"
+            },
+            {
+              "titel": "Leistungsnachweis Zeichnen",
+              "auftrag": "1.2"
+            }
+          ]
+        },
+        "2027-01-08": {
+          "lektionen": [
+            {
+              "thema": "Abfallentsorgung – Einstieg",
+              "material": [
+                "suissetec edu"
+              ],
+              "notizen": "Lehrmittel S.26–29, Lernauftrag 1.9 Fragen 1–6."
+            },
+            {
+              "thema": "Stoffkreislauf am Beispiel PET",
+              "material": [
+                "Bericht"
+              ],
+              "notizen": "Fragen 6–11, Übersicht zur Kunststoff-Problematik."
+            },
+            {
+              "thema": "Leistungsnachweis 1.9: Abfallkonzept",
+              "material": [],
+              "notizen": "Abfallkonzept der eigenen Firma erstellen."
+            },
+            {
+              "thema": "Prüfung 1.2",
+              "material": [],
+              "notizen": "Prüfung 1.2 (keine Hilfsmittel)."
+            },
+            {
+              "thema": "Leitungsisometrie",
+              "material": [],
+              "notizen": "Start Leitungsisometrie, Übung «Alpha»."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Lernauftrag 1.8 abschliessen. Für die Prüfung 1.2 lernen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übung «Alpha bis Gamma» fertigstellen. Leistungsnachweis 1.9 bis am 15.01. abgeben.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Abfallentsorgung & Recycling",
+              "auftrag": "1.9"
+            },
+            {
+              "titel": "Leitungsisometrie",
+              "auftrag": "1.2"
+            }
+          ],
+          "pruefung": {
+            "titel": "Prüfung 1.2 – Technisches Zeichnen",
+            "auftrag": "1.2"
+          }
+        },
+        "2027-01-15": {
+          "lektionen": [
+            {
+              "thema": "Zeugnisbesprechung & Auftrag 4",
+              "material": [
+                "Video"
+              ],
+              "notizen": "Zeugnisbesprechungen, Fragen zu Auftrag 4."
+            },
+            {
+              "thema": "Gefahren von Asbest",
+              "material": [
+                "SUVA"
+              ],
+              "notizen": "Asbest im Wohnhaus, Recherche auf der SUVA-Seite."
+            },
+            {
+              "thema": "SUVA-Quiz & Unterlagen ordnen",
+              "material": [],
+              "notizen": "SUVA-Quiz, Unterlagen des 1. Semesters ordnen."
+            },
+            {
+              "thema": "Leitungsisometrie: Übung Delta",
+              "material": [],
+              "notizen": "Kontrolle Alpha–Gamma, Start Übung Delta."
+            },
+            {
+              "thema": "Abschluss & Skitag-Info",
+              "material": [],
+              "notizen": "Abschluss Übung Delta/Epsilon, Infos zum Skitag."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Übung «Alpha bis Gamma» fertigstellen. Leistungsnachweis 1.9 bis am 15.01. abgeben.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "1. Semester geschafft! Infos zum Skitag Savognin (22.01.) beachten.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Asbest & Semesterabschluss",
+              "auftrag": "1.9"
+            },
+            {
+              "titel": "Leitungsisometrie",
+              "auftrag": "1.2"
+            }
+          ]
+        }
+      }
+    },
+    "SAIa26-30": {
+      "schultage": {
+        "2026-08-12": {
+          "lektionen": [
+            {
+              "thema": "Begrüssung & Kennenlernen",
+              "material": [
+                "Schulordnung",
+                "Stundenplan"
+              ],
+              "notizen": "Start ins 1. Lehrjahr, Vorstellungsrunde, Schulhaus-Rundgang."
+            },
+            {
+              "thema": "ICT einrichten: Login, Teams, OneNote",
+              "material": [
+                "Convertible",
+                "Login-Daten"
+              ],
+              "notizen": "myGBS / NESA anmelden, Teams und OneNote einrichten."
+            },
+            {
+              "thema": "ICT: Aufträge ablegen und abgeben",
+              "material": [
+                "OneNote",
+                "OneDrive"
+              ],
+              "notizen": "Auftrag herunterladen, ablegen, Leistungsnachweis abgeben."
+            },
+            {
+              "thema": "Arbeitssicherheit: Gefahren auf der Baustelle",
+              "material": [
+                "Auftrag 1.3"
+              ],
+              "notizen": "Gefahren in Werkstatt und auf Baustelle, Suva-Grundlagen."
+            },
+            {
+              "thema": "Persönliche Schutzausrüstung (PSA)",
+              "material": [
+                "Schutzbrille",
+                "Gehörschutz"
+              ],
+              "notizen": "Wann braucht es welche PSA?"
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Lernauftrag 1.12 (Leistungsnachweis) fertigstellen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "ICT-Grundlagen & Schulstart",
+              "auftrag": "1.12"
+            },
+            {
+              "titel": "Arbeitssicherheit & PSA",
+              "auftrag": "1.3"
+            }
+          ]
+        },
+        "2026-08-19": {
+          "lektionen": [
+            {
+              "thema": "Repetition Sicherheit & Gefahrensymbole",
+              "material": [
+                "Forms-Umfrage"
+              ],
+              "notizen": "Die gängigsten Gefahrensymbole erkennen."
+            },
+            {
+              "thema": "Strom: einfacher Stromkreis",
+              "material": [
+                "Auftrag 1.3"
+              ],
+              "notizen": "Stromkreislauf, Personen- und Sachschutz."
+            },
+            {
+              "thema": "Einstieg Berechnungen: Masse & Einheiten",
+              "material": [
+                "Formelbuch",
+                "Taschenrechner"
+              ],
+              "notizen": "SI-Einheiten, Längen- und Höhenmasse."
+            },
+            {
+              "thema": "Masse aus Plänen in Baumasse umrechnen",
+              "material": [
+                "Beispielpläne"
+              ],
+              "notizen": "Planmasse in reale Baumasse umrechnen."
+            },
+            {
+              "thema": "Platzbedarf von Apparaten berechnen",
+              "material": [
+                "Übungsblatt"
+              ],
+              "notizen": "Fläche und Platzbedarf von Apparaten bestimmen."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "Lernauftrag 1.12 fertigstellen. Taschenrechner mitnehmen.",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Übungen zu den Masseinheiten fertigstellen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Sicherheit & Strom",
+              "auftrag": "1.3"
+            },
+            {
+              "titel": "Berechnungen: Masse",
+              "auftrag": "1.1"
+            }
+          ]
+        }
+      }
+    },
+    "SSPa26-28": {
+      "schultage": {
+        "2026-08-10": {
+          "lektionen": [
+            {
+              "thema": "Begrüssung & Start EBA",
+              "material": [
+                "Schulordnung",
+                "Stundenplan"
+              ],
+              "notizen": "Kennenlernen, Ablauf der zweijährigen Grundbildung."
+            },
+            {
+              "thema": "ICT: Login & Teams",
+              "material": [
+                "Convertible",
+                "Login-Daten"
+              ],
+              "notizen": "Anmeldung, Microsoft Teams, einfache Ablage."
+            },
+            {
+              "thema": "Arbeitssicherheit: Grundlagen",
+              "material": [
+                "Auftrag 1.3"
+              ],
+              "notizen": "Gefahren auf der Baustelle einfach erklärt."
+            },
+            {
+              "thema": "Persönliche Schutzausrüstung",
+              "material": [
+                "Schutzbrille",
+                "Handschuhe",
+                "Helm"
+              ],
+              "notizen": "PSA kennenlernen und korrekt einsetzen."
+            },
+            {
+              "thema": "Werkstatt-Rundgang & Ordnung",
+              "material": [
+                "Werkstatt"
+              ],
+              "notizen": "Werkzeuge und Arbeitsplätze kennenlernen."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Gefahrensymbole anschauen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Start EBA & Arbeitssicherheit",
+              "auftrag": "1.3"
+            },
+            {
+              "titel": "PSA & Werkstatt",
+              "auftrag": "1.3"
+            }
+          ]
+        }
+      }
+    },
+    "SSPb26-28": {
+      "schultage": {
+        "2026-08-13": {
+          "lektionen": [
+            {
+              "thema": "Begrüssung & Start EBA",
+              "material": [
+                "Schulordnung",
+                "Stundenplan"
+              ],
+              "notizen": "Kennenlernen, Ablauf der Grundbildung EBA."
+            },
+            {
+              "thema": "ICT: Login & Teams",
+              "material": [
+                "Convertible",
+                "Login-Daten"
+              ],
+              "notizen": "Anmeldung und einfache Ablage in Teams."
+            },
+            {
+              "thema": "Arbeitssicherheit: Grundlagen",
+              "material": [
+                "Auftrag 1.3"
+              ],
+              "notizen": "Gefahren auf der Baustelle einfach erklärt."
+            },
+            {
+              "thema": "Persönliche Schutzausrüstung",
+              "material": [
+                "Schutzbrille",
+                "Handschuhe",
+                "Helm"
+              ],
+              "notizen": "PSA kennenlernen und einsetzen."
+            },
+            {
+              "thema": "Werkstatt-Rundgang",
+              "material": [
+                "Werkstatt"
+              ],
+              "notizen": "Werkzeuge und Arbeitsplätze kennenlernen."
+            }
+          ],
+          "hausaufgabenFaellig": {
+            "text": "",
+            "fotos": []
+          },
+          "hausaufgabenNaechste": {
+            "text": "Gefahrensymbole anschauen.",
+            "fotos": []
+          },
+          "bloecke": [
+            {
+              "titel": "Start EBA & Arbeitssicherheit",
+              "auftrag": "1.3"
+            },
+            {
+              "titel": "PSA & Werkstatt",
+              "auftrag": "1.3"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

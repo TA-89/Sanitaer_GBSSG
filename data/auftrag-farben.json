@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "stand": "2026-06-17",
+  "hinweis": "Akzent-/Schriftfarben der Lernaufträge, übernommen aus den Original-Auftrags-PDFs (dort kodieren die Schriftfarben die Themengruppe). Werden im Tagesprogramm dezent als Block-Tönung verwendet. Weitere Aufträge können hier ergänzt werden; ohne Eintrag wird die Handlungsfeld-Farbe als Fallback genutzt.",
+  "farben": {
+    "1.1": "#385623",
+    "1.2": "#385623",
+    "1.3": "#385623",
+    "1.4": "#2F5496",
+    "1.5": "#2F5496",
+    "1.6": "#806000",
+    "1.8": "#806000",
+    "1.9": "#7030A0",
+    "1.12": "#7030A0"
+  }
+}

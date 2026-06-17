@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "stand": "2026-06-16",
+  "quelle": "Ferienkalender GBS St. Gallen (Rektorat), Schuljahr 2026/27",
+  "hinweis": "Ferienpläne pro Standort/Schuljahr. ferien = mehrtägige Intervalle (von/bis inklusive, ISO-Datum). feiertage = einzelne schulfreie Tage. An diesen Tagen findet kein Unterricht statt; die Schultagsberechnung überspringt sie.",
+  "plaene": {
+    "sg-2026-27": {
+      "name": "GBS St. Gallen 2026/27",
+      "ferien": [
+        { "name": "Herbstferien",    "von": "2026-09-27", "bis": "2026-10-18" },
+        { "name": "Weihnachtsferien", "von": "2026-12-20", "bis": "2027-01-03" },
+        { "name": "Winterferien",     "von": "2027-01-31", "bis": "2027-02-07" },
+        { "name": "Frühlingsferien",  "von": "2027-04-11", "bis": "2027-04-25" }
+      ],
+      "feiertage": [
+        { "name": "Allerheiligen", "datum": "2026-11-01" },
+        { "name": "Karfreitag",    "datum": "2027-03-26" },
+        { "name": "Ostermontag",   "datum": "2027-03-29" },
+        { "name": "Auffahrt",      "datum": "2027-05-06" },
+        { "name": "Auffahrtsbrücke","datum": "2027-05-07" },
+        { "name": "Pfingstmontag", "datum": "2027-05-17" }
+      ]
+    }
+  }
+}

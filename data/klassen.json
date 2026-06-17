@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "stand": "2026-06-16",
+  "hinweis": "Klassen der Fachgruppe Sanitär (GBS St. Gallen) mit fixem Unterrichts-Halbtag. wochentag = ISO-Wochentag (1=Montag … 5=Freitag). semester = das im Herbst 2026 laufende Semester der Klasse. periode verweist auf semesterDaten. Schultage werden daraus + Ferienplan berechnet (siehe app.js computeSchooldays).",
+  "semesterDaten": {
+    "H2026": {
+      "name": "Herbstsemester 2026/27",
+      "von": "2026-08-10",
+      "bis": "2027-01-16",
+      "ferienplan": "sg-2026-27"
+    }
+  },
+  "klassen": [
+    { "id": "SAIa26-30", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 3, "halbtag": "Vormittag",  "lehrjahr": 1, "semester": 1, "periode": "H2026" },
+    { "id": "SAIb26-30", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 5, "halbtag": "Nachmittag", "lehrjahr": 1, "semester": 1, "periode": "H2026" },
+    { "id": "SAIa25-29", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 2, "halbtag": "Vormittag",  "lehrjahr": 2, "semester": 3, "periode": "H2026" },
+    { "id": "SAIb25-29", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 2, "halbtag": "Nachmittag", "lehrjahr": 2, "semester": 3, "periode": "H2026" },
+    { "id": "SAIa24-28", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 1, "halbtag": "Vormittag",  "lehrjahr": 3, "semester": 5, "periode": "H2026" },
+    { "id": "SAIb24-28", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 5, "halbtag": "Vormittag",  "lehrjahr": 3, "semester": 5, "periode": "H2026" },
+    { "id": "SAIa23-27", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 4, "halbtag": "Nachmittag", "lehrjahr": 4, "semester": 7, "periode": "H2026" },
+    { "id": "SAIb23-27", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 3, "halbtag": "Nachmittag", "lehrjahr": 4, "semester": 7, "periode": "H2026" },
+    { "id": "SSPa26-28", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 1, "halbtag": "Nachmittag", "lehrjahr": 1, "semester": 1, "periode": "H2026" },
+    { "id": "SSPb26-28", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 4, "halbtag": "Vormittag",  "lehrjahr": 1, "semester": 1, "periode": "H2026" },
+    { "id": "SSPa25-27", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 3, "halbtag": "Nachmittag", "lehrjahr": 2, "semester": 3, "periode": "H2026" }
+  ]
+}
