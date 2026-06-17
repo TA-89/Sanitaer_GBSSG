@@ -790,7 +790,7 @@ function renderTagesprogramm(params) {
           <span class="tp-dc-eyebrow">Berufskundeunterricht Sanitär</span>
           <div class="tp-dc-idrow">
             <div class="tp-dc-daybox">
-              <span class="tp-dc-daynr">Schultag ${idx + 1}/${days.length}</span>
+              <span class="tp-dc-daynr">${idx + 1}</span>
               <span class="tp-dc-wd">${escapeHtml(weekdayLang(dayDate))}</span>
               <span class="tp-dc-date">${escapeHtml(formatLang(dayDate))}</span>
             </div>
@@ -1455,6 +1455,8 @@ function applyEmbedState() {
     else if (force === "0") embedded = false;
   } catch {}
   document.body.classList.toggle("is-embed", embedded);
+  // Im Embed (Teams) die Sidebar nie eingeklappt → beim Hover erscheinen Icons MIT Text.
+  if (embedded) document.body.classList.remove("sidebar-collapsed");
 }
 
 // Einbett-Link für einen Teams-Website-Reiter: öffnet das Tagesprogramm der Klasse
@@ -1524,6 +1526,7 @@ function updateActiveNav() {
   else if (hash.startsWith("#/entdecken") || hash.startsWith("#/auftrag") || /^#\/semester\/\d/.test(hash)) key = "entdecken";
   else if (hash.startsWith("#/klasse") || hash === "#/" || hash === "" || hash.startsWith("#/semester")) key = "tagesprogramm";
   else key = ""; // Info / Lehrer / Edit – keine Hauptkachel aktiv
+  document.body.classList.toggle("page-tagesprogramm", key === "tagesprogramm");
   $$(".sidenav a, .bottomnav a").forEach((a) => a.classList.toggle("is-active", key !== "" && a.dataset.nav === key));
   $$(".sidebar-lehrer").forEach((a) => a.classList.toggle("is-active", hash.startsWith("#/lehrer")));
 

@@ -304,6 +304,9 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
    ========================================================================== */
 .main { flex: 1; }
 .view { width: var(--container); margin: var(--space-5) auto var(--space-7); }
+/* Tagesprogramm: grüner Kopfbalken (fast) bis an den oberen Rand ziehen */
+body.page-tagesprogramm .view { margin-top: var(--space-2) !important; }
+body.is-embed.page-tagesprogramm .view { margin-top: 0 !important; }
 
 @media (max-width: 860px) {
   .view { margin: var(--space-3) auto calc(72px + var(--space-6)); }
@@ -2311,7 +2314,7 @@ body.has-overlay { overflow: hidden; }
 .btn-brand { background: var(--brand); color: var(--brand-darker); border-color: var(--brand); font-weight: 600; }
 .btn-brand:hover { background: var(--brand-dark); color: #fff; border-color: var(--brand-dark); }
 
-.tp { padding-top: var(--space-4); }
+.tp { padding-top: 0; }
 
 /* Kopfbereich */
 .tp-head {
@@ -2627,14 +2630,15 @@ body.has-overlay { overflow: hidden; }
 .tp-dc-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
 /* Schwarzes Feld mit Schultag-Nr + Wochentag + Datum (weisse Schrift), rechts daneben die Klasse */
 .tp-dc-idrow { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4); }
+/* Schwarzes Feld: breit & flach, alles in EINER Reihe – Nummer · Wochentag · Datum (weiss) */
 .tp-dc-daybox {
-  display: inline-flex; flex-direction: column; gap: 1px;
+  display: inline-flex; flex-direction: row; align-items: baseline; gap: var(--space-3);
   background: var(--ink); color: #fff;
-  border-radius: var(--radius); padding: 8px 16px;
+  border-radius: var(--radius); padding: 5px 18px;
 }
-.tp-dc-daynr { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
-.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: #fff; }
-.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: rgba(255, 255, 255, 0.78); }
+.tp-dc-daynr { font-family: var(--font-mono); font-size: 1.7rem; font-weight: 700; line-height: 1; color: #fff; }
+.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.2rem, 0.9vw + 0.85rem, 1.55rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: #fff; }
+.tp-dc-date { font-size: 0.95rem; font-weight: 600; color: rgba(255, 255, 255, 0.82); white-space: nowrap; }
 .tp-dc-klasse { font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
 .tp-dc-thema { margin-top: 2px; font-size: 0.86rem; font-weight: 600; color: var(--ink); }
 
