@@ -793,7 +793,6 @@ function renderTagesprogramm(params) {
           <span class="tp-dc-wd">${escapeHtml(weekdayLang(dayDate))}</span>
           <span class="tp-dc-date">${escapeHtml(formatLang(dayDate))}</span>
         </div>
-        <span class="tp-status tp-status--${st.cls}">${escapeHtml(st.txt)}</span>
       </header>`;
     let html = head + buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
     html += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
@@ -1038,6 +1037,19 @@ function renderEditorUI(v) {
         </div>
       </header>
 
+      <details class="ed-teamslinks">
+        <summary><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Teams-Links der Klassen <span class="ed-tl-sub">– als Website-Reiter einbetten</span></summary>
+        <p class="ed-tl-hint">Diese Links als „Website"-Reiter in den Teams-Kanal der jeweiligen Klasse einfügen. Die Seite öffnet dann automatisch das Tagesprogramm dieser Klasse im eingebetteten Modus und skaliert sich auf die Reitergrösse.</p>
+        <div class="ed-tl-list">
+          ${allKlassen().map((k) => `
+            <div class="ed-tl-row">
+              <span class="ed-tl-klasse">${escapeHtml(k.id)}</span>
+              <input class="ed-input ed-tl-url" type="text" readonly value="${escapeHtml(teamsLink(k.id))}" aria-label="Teams-Link ${escapeHtml(k.id)}">
+              <button type="button" class="btn btn-ghost btn-sm ed-tl-copy" data-url="${escapeHtml(teamsLink(k.id))}">Kopieren</button>
+            </div>`).join("")}
+        </div>
+      </details>
+
       <div class="editor2-pick">
         <div class="ed-field">
           <label for="ed-klasse">Klasse</label>
@@ -1063,6 +1075,23 @@ function renderEditorUI(v) {
 
   const tagSelect = $("#ed-tag");
   $("#ed-semester-pdf").addEventListener("click", () => exportSemesterPdf($("#ed-klasse").value));
+
+  // Teams-Link kopieren (pro Klasse) – mit Fallback für ältere Browser
+  $$(".ed-tl-copy").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const url = btn.dataset.url || "";
+      let ok = false;
+      try { await navigator.clipboard.writeText(url); ok = true; }
+      catch {
+        const inp = btn.parentElement.querySelector(".ed-tl-url");
+        if (inp) { inp.focus(); inp.select(); try { ok = document.execCommand("copy"); } catch {} }
+      }
+      const prev = btn.textContent;
+      btn.textContent = ok ? "Kopiert ✓" : "Manuell markieren";
+      btn.classList.toggle("is-copied", ok);
+      setTimeout(() => { btn.textContent = prev; btn.classList.remove("is-copied"); }, 1600);
+    });
+  });
   const fillTagSelect = (kid, selectDate) => {
     const klasse = klasseById(kid);
     const days = computeSchooldays(klasse);
@@ -1399,6 +1428,12 @@ function applyEmbedState() {
     else if (force === "0") embedded = false;
   } catch {}
   document.body.classList.toggle("is-embed", embedded);
+}
+
+// Einbett-Link für einen Teams-Website-Reiter: öffnet das Tagesprogramm der Klasse
+// direkt im Embed-Modus (?embed=1). Basis = aktuelle Live-URL (origin + Pfad).
+function teamsLink(klasseId) {
+  return `${location.origin}${location.pathname}?embed=1#/klasse/${encodeURIComponent(klasseId)}`;
 }
 
 // Im Embed-Modus den ganzen Schultag herunterskalieren, bis er in die sichtbare
