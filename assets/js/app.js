@@ -826,6 +826,12 @@ function renderTagesprogramm(params) {
   $("#tp-sem").addEventListener("click", () => { const a = $("#weitere-anchor"); if (a) a.scrollIntoView({ behavior: "smooth", block: "start" }); });
   if (idx > 0) $("#tp-prev").addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx - 1]}`; });
   if (idx >= 0 && idx < days.length - 1) $("#tp-next").addEventListener("click", () => { location.hash = `#/klasse/${encodeURIComponent(klasseId)}/${days[idx + 1]}`; });
+
+  // Embed-Modus: ganzen Schultag in die sichtbare iframe-Höhe einpassen
+  // (direkt, nach dem nächsten Frame und sobald die Fonts geladen sind – Metriken ändern sich sonst).
+  fitEmbed();
+  requestAnimationFrame(fitEmbed);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitEmbed);
 }
 
 // Semester-Route: leitet aufs Tagesprogramm (mit Kachel-Übersicht) der Klasse um.
@@ -1394,6 +1400,36 @@ function applyEmbedState() {
   } catch {}
   document.body.classList.toggle("is-embed", embedded);
 }
+
+// Im Embed-Modus den ganzen Schultag herunterskalieren, bis er in die sichtbare
+// iframe-Höhe passt (wie "auf Seite einpassen"). Links ausgerichtet; skaliert mit
+// der Reitergrösse mit. Nur Verkleinern (max. 1:1), mit sinnvoller Untergrenze.
+function fitEmbed() {
+  const view = $("#view");
+  if (!view) return;
+  // Erst zurücksetzen, um die natürliche Grösse zu messen
+  view.style.zoom = "";
+  if (!document.body.classList.contains("is-embed")) return;
+  // Bezugselement: der Schultag (Tageskachel); fehlt er, nichts skalieren
+  const day = view.querySelector(".tp-daycard") || view.querySelector(".tp-empty");
+  if (!day) return;
+  // Unterkante des Schultags ab Viewport-Oberkante (Seite ist beim Rendern oben)
+  const natBottom = day.getBoundingClientRect().bottom + window.scrollY;
+  const availH = window.innerHeight - 8;
+  if (natBottom <= 0) return;
+  // zoom skaliert (anders als transform) den Layout-Fluss mit und richtet links aus.
+  let z = availH / natBottom;
+  z = Math.max(0.5, Math.min(1, z));
+  if (z < 1) view.style.zoom = String(z);
+}
+
+// Bei Grössenänderung des iframes neu einpassen (entprellt)
+let _fitTimer = null;
+function scheduleFit() {
+  if (_fitTimer) clearTimeout(_fitTimer);
+  _fitTimer = setTimeout(fitEmbed, 80);
+}
+window.addEventListener("resize", scheduleFit);
 
 // Sidebar einmalig initialisieren (Klassen-Dropdown füllen + Toggle verdrahten)
 let _shellInited = false;

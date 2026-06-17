@@ -2702,32 +2702,25 @@ body.has-overlay { overflow: hidden; }
    untereinander → etwa halbe Höhe; dazu Footer aus + kompaktere Abstände.
    ========================================================================== */
 body.is-embed .footer { display: none; }
-body.is-embed .view { margin-top: var(--space-3); margin-bottom: var(--space-4); }
+/* Links ausgerichtet (kein Zentrieren). fitEmbed() in app.js setzt per JS ein
+   zoom < 1, bis der ganze Schultag in die sichtbare iframe-Höhe passt. zoom
+   skaliert den Layout-Fluss mit (inkl. linker Ausrichtung). Blöcke bleiben
+   untereinander (Standard-Layout). */
+body.is-embed .view {
+  margin: var(--space-3) 0 var(--space-4);
+  width: 100%;
+  max-width: 1040px;
+}
 body.is-embed .tp-bar { margin-bottom: var(--space-3); }
 body.is-embed .tp-banner { padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
 body.is-embed .tp-daycard { padding: var(--space-3) var(--space-4); }
 body.is-embed .tp-dc-head { padding-bottom: var(--space-2); margin-bottom: var(--space-2); }
 body.is-embed .tp-daycard .tp-dc-label { margin: var(--space-3) 0 var(--space-2); }
 body.is-embed .tp-daycard .tp-section-label { margin: var(--space-3) 0 var(--space-2); }
-/* Etwas kompaktere Lektionszeilen, damit auch mit Banner + Teams-Leisten alles passt */
+/* Etwas kompaktere Lektionszeilen → weniger Skalierung nötig, besser lesbar */
 body.is-embed .lektion-row { padding: 5px 0; }
 body.is-embed .lektion-block-head { padding-bottom: 3px; }
 body.is-embed .lz-btn-inline { margin-top: 7px; }
-
-/* Ab genügend Breite die beiden Blöcke nebeneinander legen (Pause als schmale
-   Leiste darunter, volle Breite). Auf schmalen iframes bleibt es einspaltig. */
-@media (min-width: 720px) {
-  body.is-embed .lektion-blocks {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: var(--space-4);
-    row-gap: var(--space-2);
-    align-items: start;
-  }
-  body.is-embed .lektion-blocks > .lektion-block:nth-child(1) { grid-column: 1; grid-row: 1; }
-  body.is-embed .lektion-blocks > .lektion-block:nth-child(3) { grid-column: 2; grid-row: 1; }
-  body.is-embed .lektion-blocks > .lektion-pause { grid-column: 1 / -1; grid-row: 2; margin: 0; }
-}
 
 /* Kachel-Übersicht aller Schultage */
 .tp-tiles {
