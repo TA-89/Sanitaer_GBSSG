@@ -1381,10 +1381,25 @@ function applySidebarState() {
   document.body.classList.toggle("sidebar-collapsed", collapsed);
 }
 
+// Embed-Modus: wenn die Seite eingebettet läuft (z. B. als Teams-Reiter im iframe),
+// schaltet ein kompaktes, höhensparendes Layout den ganzen Schultag ohne Scrollen sichtbar.
+// Automatisch per iframe-Erkennung; mit ?embed=1 / ?embed=0 erzwingbar.
+function applyEmbedState() {
+  let embedded = false;
+  try { embedded = window.self !== window.top; } catch { embedded = true; }
+  try {
+    const force = new URLSearchParams(location.search).get("embed");
+    if (force === "1") embedded = true;
+    else if (force === "0") embedded = false;
+  } catch {}
+  document.body.classList.toggle("is-embed", embedded);
+}
+
 // Sidebar einmalig initialisieren (Klassen-Dropdown füllen + Toggle verdrahten)
 let _shellInited = false;
 function initShell() {
   applySidebarState();
+  applyEmbedState();
   if (_shellInited) return;
   const sel = $("#sb-klasse");
   if (sel && allKlassen().length) {
