@@ -929,8 +929,18 @@ function exportSemesterPdf(klasseId) {
   const days = computeSchooldays(klasse);
   const periode = state.klassen.semesterDaten[klasse.periode];
   const halbtag = klasse.halbtag;
-  const daysHtml = days.map((iso, i) => {
-    const c = schooldayContent(klasseId, iso);
+
+  // Eine Seite = Titelseite + je ein Schultag. Seitenzahlen sind dadurch exakt bekannt.
+  const logo = `<div class="pdfpage-head"><img class="pdfpage-logo" src="assets/img/gbssg-logo-text.png" alt="Kanton St.Gallen – GBS St.Gallen"></div>`;
+  const pageBodies = [];
+  // Titelseite
+  pageBodies.push(`<div class="pdfpage-title">
+      <h1>${escapeHtml(klasse.id)} · ${klasse.semester}. Semester</h1>
+      <p>Berufskundeunterricht Sanitär · ${escapeHtml(klasse.beruf)} · ${escapeHtml(periode ? periode.name : "")}<br>${days.length} Schultage</p>
+    </div>`);
+  // Je Schultag eine Seite
+  days.forEach((iso, i) => {
+    const c = schooldayContent(klasse.id, iso);
     const dt = parseISO(iso);
     const pr = schooldayPruefung(c);
     let inner = `<div class="print-day-head"><span class="print-day-nr">Schultag ${i + 1}</span><span>${escapeHtml(weekdayLang(dt))}, ${escapeHtml(formatLang(dt))}</span>${pr ? `<span class="print-day-pruef">${escapeHtml(pr.titel)}</span>` : ""}</div>`;
@@ -938,15 +948,19 @@ function exportSemesterPdf(klasseId) {
     inner += buildLektionenHtml(c, halbtag);
     inner += buildExtrasHtml(c);
     inner += buildHausaufgabenHtml(c && c.hausaufgabenNaechste, "naechste");
-    return `<div class="print-day">${inner}</div>`;
-  }).join("");
-  const wrap = el(`<div class="print-archiv">
-    <div class="print-archiv-head">
-      <h1>${escapeHtml(klasse.id)} · ${klasse.semester}. Semester</h1>
-      <p>Berufskundeunterricht Sanitär · ${escapeHtml(klasse.beruf)} · ${escapeHtml(periode ? periode.name : "")} · ${days.length} Schultage</p>
-    </div>
-    ${daysHtml}
-  </div>`);
+    pageBodies.push(inner);
+  });
+
+  const total = pageBodies.length;
+  const footPrefix = `Fachbereich Spengler Sanitär | GBS SG | Klasse ${escapeHtml(klasse.id)}`;
+  const pagesHtml = pageBodies.map((body, i) => `
+    <section class="pdfpage">
+      ${logo}
+      <div class="pdfpage-body">${body}</div>
+      <div class="pdfpage-foot">${footPrefix} | Seite ${i + 1} von ${total}</div>
+    </section>`).join("");
+
+  const wrap = el(`<div class="print-archiv">${pagesHtml}</div>`);
   document.body.appendChild(wrap);
   document.body.classList.add("printing-archiv");
   const prevTitle = document.title;

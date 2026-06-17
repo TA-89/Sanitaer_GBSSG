@@ -2915,18 +2915,31 @@ body.is-embed .lz-btn-inline { margin-top: 7px; }
 .print-archiv { display: none; }
 .print-archiv-head h1 { font-size: 1.5rem; margin: 0 0 4px; }
 .print-archiv-head p { font-size: 0.85rem; color: var(--ink-soft); margin: 0 0 12px; }
-.print-day { margin-bottom: 14px; }
 .print-day-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; font-size: 0.95rem; font-weight: 700; padding: 6px 0; border-bottom: 2px solid var(--ink); margin-bottom: 8px; }
 .print-day-nr { font-family: var(--font-mono); background: var(--ink); color: #fff; border-radius: 5px; padding: 2px 8px; font-size: 0.8rem; }
 .print-day-pruef { font-weight: 600; color: var(--ink-soft); }
 
+/* Eine Seite = Titelseite + je ein Schultag; Logo (Kopf) + Fusszeile mit Seitenzahl */
+.pdfpage { display: flex; flex-direction: column; min-height: 271mm; page-break-after: always; break-after: page; }
+.pdfpage:last-child { page-break-after: auto; break-after: auto; }
+.pdfpage-head { display: flex; justify-content: flex-end; margin-bottom: 6mm; }
+.pdfpage-logo { height: 11mm; width: auto; }
+.pdfpage-body { flex: 1 0 auto; }
+.pdfpage-title { padding-top: 8mm; }
+.pdfpage-title h1 { font-size: 1.7rem; margin: 0 0 6px; }
+.pdfpage-title p { font-size: 0.95rem; color: var(--ink-soft); line-height: 1.5; }
+.pdfpage-foot {
+  margin-top: auto; padding-top: 4mm; border-top: 1px solid #999;
+  font-size: 8pt; color: #555; text-align: center; letter-spacing: 0.01em;
+}
+
 @media print {
   .sidebar, .mobile-topbar, .bottomnav, .footer, .filterbar, .cta-row, .modal, .tp-nav, .tp-tiles { display: none !important; }
+  @page { size: A4; margin: 13mm 14mm; }
   /* Semester-Archiv: nur dieses drucken, Rest ausblenden */
   body.printing-archiv { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body.printing-archiv > .print-archiv { display: block !important; position: absolute; inset: 0; width: 100%; padding: 0; }
   body.printing-archiv > *:not(.print-archiv) { display: none !important; }
-  .print-archiv .print-day { page-break-inside: avoid; }
   .print-archiv .lz-btn, .print-archiv .lz-btn-inline { display: none !important; }
   .print-archiv .lz-panel { display: block !important; }
   .print-archiv .tp-daycard, .print-archiv .lektion-block.has-blk { box-shadow: none !important; }
