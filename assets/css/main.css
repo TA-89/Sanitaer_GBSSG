@@ -2617,33 +2617,33 @@ body.has-overlay { overflow: hidden; }
 }
 .tp-dc-head {
   display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-3) var(--space-4);
-  background: var(--ink); color: #fff;
+  background: var(--brand); color: var(--ink);   /* GBS-Hellgrün, schwarze Schrift */
   padding: var(--space-4);
 }
 .tp-dc-body { padding: var(--space-4); }
 .tp-dc-num {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   flex-shrink: 0; width: 54px; padding: 6px 0;
-  background: var(--brand); color: var(--ink); border-radius: var(--radius); line-height: 1;
+  background: var(--ink); color: #fff; border-radius: var(--radius); line-height: 1;
 }
-.tp-dc-num-l { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; opacity: .85; }
+.tp-dc-num-l { font-size: 0.54rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; opacity: .8; }
 .tp-dc-num strong { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; margin: 2px 0 1px; }
 .tp-dc-of { font-size: 0.6rem; opacity: .7; }
 .tp-dc-when { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 1px; }
-.tp-dc-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand); }
-.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: #fff; }
-.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: rgba(255, 255, 255, 0.72); }
-.tp-dc-thema { margin-top: 2px; font-size: 0.86rem; font-weight: 600; color: var(--brand); }
+.tp-dc-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(0, 0, 0, 0.62); }
+.tp-dc-wd { font-family: var(--font-display); font-size: clamp(1.3rem, 1.1vw + 0.9rem, 1.7rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: var(--ink); }
+.tp-dc-date { font-size: 0.92rem; font-weight: 600; color: rgba(0, 0, 0, 0.62); }
+.tp-dc-thema { margin-top: 2px; font-size: 0.86rem; font-weight: 600; color: var(--ink); }
 
-/* Navigation im schwarzen Kopfbalken (für dunklen Hintergrund umgefärbt) */
+/* Navigation im hellgrünen Kopfbalken (für hellen Hintergrund: dunkle Schrift/Ränder) */
 .tp-dc-head .tp-nav { margin-left: auto; }
-.tp-dc-head .tp-nav-group { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.22); }
-.tp-dc-head .tp-navbtn { color: rgba(255, 255, 255, 0.82); }
-.tp-dc-head .tp-navbtn-mid { color: #fff; }
-.tp-dc-head .tp-navbtn + .tp-navbtn { border-left-color: rgba(255, 255, 255, 0.22); }
-.tp-dc-head .tp-navbtn:hover:not([disabled]) { background: rgba(255, 255, 255, 0.14); color: #fff; }
-.tp-dc-head .tp-navlink { color: rgba(255, 255, 255, 0.85); border-color: rgba(255, 255, 255, 0.25); background: transparent; }
-.tp-dc-head .tp-navlink:hover { background: rgba(255, 255, 255, 0.12); color: #fff; border-color: rgba(255, 255, 255, 0.45); }
+.tp-dc-head .tp-nav-group { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.22); }
+.tp-dc-head .tp-navbtn { color: rgba(0, 0, 0, 0.7); }
+.tp-dc-head .tp-navbtn-mid { color: var(--ink); }
+.tp-dc-head .tp-navbtn + .tp-navbtn { border-left-color: rgba(0, 0, 0, 0.18); }
+.tp-dc-head .tp-navbtn:hover:not([disabled]) { background: rgba(0, 0, 0, 0.1); color: var(--ink); }
+.tp-dc-head .tp-navlink { color: var(--ink); border-color: rgba(0, 0, 0, 0.28); background: transparent; }
+.tp-dc-head .tp-navlink:hover { background: rgba(0, 0, 0, 0.08); color: var(--ink); border-color: rgba(0, 0, 0, 0.45); }
 .tp-dc-label {
   font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
   color: var(--ink-quiet); margin: 0 0 var(--space-2);
@@ -2736,6 +2736,25 @@ body.is-embed .tp-daycard .tp-section-label { margin: var(--space-3) 0 var(--spa
 body.is-embed .lektion-row { padding: 5px 0; }
 body.is-embed .lektion-block-head { padding-bottom: 3px; }
 body.is-embed .lz-btn-inline { margin-top: 7px; }
+
+/* Teams/Embed: Sidebar standardmässig ausgeblendet, nur beim Hovern am linken
+   Rand als Overlay einblenden. Ein schmaler Griff (Lime) bleibt als Trigger sichtbar;
+   der Inhalt nutzt die volle Breite. (Nur breit; schmal greift die Bottomnav.) */
+@media (min-width: 861px) {
+  body.is-embed .sidebar {
+    position: fixed; top: 0; left: calc(8px - var(--sidebar-w)); height: 100vh; width: var(--sidebar-w); z-index: 60;
+    transition: left .2s ease, box-shadow .2s ease;
+  }
+  body.is-embed .sidebar::after {
+    content: ""; position: absolute; top: 0; right: 0; width: 8px; height: 100%;
+    background: var(--brand);
+  }
+  body.is-embed .sidebar:hover {
+    left: 0;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
+  }
+  body.is-embed .sidebar:hover::after { background: transparent; }
+}
 
 /* Kachel-Übersicht aller Schultage */
 .tp-tiles {
@@ -2896,10 +2915,17 @@ body.is-embed .lz-btn-inline { margin-top: 7px; }
 /* ==========================================================================
    Print
    ========================================================================== */
+/* Einheitliche Kopfzeile ALLER Unterseiten (Lernaufträge, Ablauf der Lehre,
+   Kompetenzen, Info): gleiche Titelgrösse + gleiche Position. */
+.home-hero, .la-head, .section-head { margin: var(--space-3) 0 var(--space-5); padding: 0; }
+.home-hero h1, .la-head h1, .section-head h1 {
+  margin: 0 0 var(--space-2);
+  font-size: clamp(1.9rem, 1.8vw + 1.1rem, 2.6rem);
+  font-weight: 600; letter-spacing: -0.035em; line-height: 1.12;
+}
+.home-sub, .la-sub, .section-head p { font-size: 1rem; line-height: 1.5; color: var(--ink-soft); margin: 0; max-width: 760px; }
+
 /* Lernaufträge-Seite (Suche) – intuitiv & responsive */
-.la-head { margin: var(--space-2) 0 var(--space-4); }
-.la-head h1 { margin: 0 0 var(--space-2); }
-.la-sub { max-width: 720px; font-size: 0.98rem; color: var(--ink-soft); margin: 0; }
 .la-sub strong { color: var(--ink); font-weight: 600; }
 .la-search { margin-bottom: var(--space-4); }
 .la-search-box {
@@ -2937,10 +2963,10 @@ body.is-embed .lz-btn-inline { margin-top: 7px; }
 /* Eine Seite = Titelseite + je ein Schultag; Logo (Kopf) + Fusszeile mit Seitenzahl */
 .pdfpage { display: flex; flex-direction: column; min-height: 271mm; page-break-after: always; break-after: page; }
 .pdfpage:last-child { page-break-after: auto; break-after: auto; }
-.pdfpage-head { display: flex; justify-content: flex-end; margin-bottom: 6mm; }
+.pdfpage-head { display: flex; justify-content: flex-end; margin-bottom: 3mm; }
 .pdfpage-logo { height: 11mm; width: auto; }
 .pdfpage-body { flex: 1 0 auto; }
-.pdfpage-title { padding-top: 8mm; }
+.pdfpage-title { padding-top: 2mm; }
 .pdfpage-title h1 { font-size: 1.7rem; margin: 0 0 6px; }
 .pdfpage-title p { font-size: 0.95rem; color: var(--ink-soft); line-height: 1.5; }
 .pdfpage-foot {
@@ -2952,7 +2978,7 @@ body.is-embed .lz-btn-inline { margin-top: 7px; }
 
 @media print {
   .sidebar, .mobile-topbar, .bottomnav, .footer, .filterbar, .cta-row, .modal, .tp-nav, .tp-tiles { display: none !important; }
-  @page { size: A4; margin: 13mm 14mm; }
+  @page { size: A4; margin: 8mm 14mm 13mm 14mm; }
   /* Semester-Archiv: nur dieses drucken, Rest ausblenden */
   body.printing-archiv { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body.printing-archiv > .print-archiv { display: block !important; position: absolute; inset: 0; width: 100%; padding: 0; }

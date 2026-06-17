@@ -1599,10 +1599,6 @@ function renderHome() {
   v.appendChild(el(`
     <section class="home">
       <header class="home-hero">
-        <div class="home-eyebrow">
-          <span class="home-dot"></span>
-          GBS St. Gallen · Sanitärinstallateur/in EFZ
-        </div>
         <h1>Ablauf der Lehre</h1>
         <p class="home-sub">Acht Semester, ${total} Lernaufträge. Klick auf ein Semester, um den Lernpfad mit Aufträgen und den Prüfungen (mit Lernzielen) zu öffnen.</p>
       </header>
