@@ -221,7 +221,7 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
   display: flex; align-items: center; gap: var(--space-3);
   padding: 12px var(--space-3);
   border-radius: var(--radius);
-  color: var(--ink-soft); font-weight: 600; font-size: 1.06rem;
+  color: var(--ink-soft); font-weight: 700; font-size: 1.06rem;
   letter-spacing: -0.01em;
   transition: color .15s, background .15s;
 }
@@ -262,10 +262,8 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 .sidenav a svg { color: rgba(255, 255, 255, 0.6); }
 .sidenav a:hover { background: transparent; color: var(--brand); }
 .sidenav a:hover svg { color: var(--brand); }
-.sidenav a.is-active { background: var(--brand); color: var(--ink); box-shadow: none; font-weight: 700; }
-.sidenav a.is-active svg { color: var(--ink); }
-.sidenav a.is-active:hover { color: var(--ink); }
-.sidenav a.is-active:hover svg { color: var(--ink); }
+.sidenav a.is-active { background: transparent; color: var(--brand); box-shadow: none; }
+.sidenav a.is-active svg { color: var(--brand); }
 .sidebar-foot { border-top-color: rgba(255, 255, 255, 0.12); }
 .sidebar-sublink { color: rgba(255, 255, 255, 0.6); }
 .sidebar-sublink:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
@@ -331,14 +329,36 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
    ========================================================================== */
 .main { flex: 1; }
 .view { width: var(--container); margin: var(--space-5) auto var(--space-7); }
-/* Tagesprogramm: grüner Kopfbalken (fast) bis an den oberen Rand ziehen */
-body.page-tagesprogramm .view { margin-top: var(--space-2) !important; }
 body.is-embed.page-tagesprogramm .view { margin-top: 0 !important; }
-/* Tagesprogramm (normale Seite): Kachel füllt die Breite, responsive, mit dezenten Seitenrändern */
-body.page-tagesprogramm:not(.is-embed) .view {
-  width: auto; max-width: none;
-  margin-left: clamp(var(--space-3), 2.5vw, var(--space-6));
-  margin-right: clamp(var(--space-3), 2.5vw, var(--space-6));
+
+/* ---- Desktop (mit Sidebar): Kopfleisten oben+links bündig an die Sidebar ---- */
+@media (min-width: 861px) {
+  /* Inhaltsspalte randlos; Body bekommt seitliche/untere Polsterung, oben bündig */
+  body:not(.is-embed) .view {
+    width: auto; max-width: none;
+    margin: 0; padding: 0 var(--space-6) var(--space-7);
+  }
+  /* Schwarze Kopfleiste der Unterseiten – bricht bis an die Ränder aus, eckig, oben/links angeschlossen */
+  body:not(.is-embed) .home-hero,
+  body:not(.is-embed) .la-head,
+  body:not(.is-embed) .section-head {
+    background: var(--ink); color: #fff;
+    margin: 0 calc(-1 * var(--space-6)) var(--space-5);
+    padding: var(--space-5) var(--space-6);
+    border-radius: 0; max-width: none;
+  }
+  body:not(.is-embed) .home-hero h1,
+  body:not(.is-embed) .la-head h1,
+  body:not(.is-embed) .section-head h1 { color: #fff; font-weight: 700; }
+  body:not(.is-embed) .home-sub,
+  body:not(.is-embed) .la-sub,
+  body:not(.is-embed) .section-head p { color: rgba(255, 255, 255, 0.72); }
+  body:not(.is-embed) .la-sub strong { color: #fff; }
+  /* Tagesprogramm: grüner Kopf voll an Sidebar/oben anschliessen (ganze Kachel randlos) */
+  body.page-tagesprogramm:not(.is-embed) .tp-daycard {
+    margin: 0 calc(-1 * var(--space-6)) var(--space-5);
+    border: none; border-radius: 0; box-shadow: none;
+  }
 }
 
 @media (max-width: 860px) {
