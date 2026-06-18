@@ -2535,23 +2535,19 @@ function renderKompetenzen() {
     <section class="plakat-section">
       <div class="plakat-toolbar">
         <span class="plakat-hint" id="plakat-hint">Tippe auf ein Kästchen, um die zugehörigen Aufträge zu sehen.</span>
-        <button id="plakat-edit-toggle" class="btn btn-ghost" type="button">Bereiche bearbeiten</button>
+        <button id="plakat-expand" class="btn btn-ghost" type="button">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="margin-right:4px"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Vollbild
+        </button>
       </div>
       <div class="plakat-frame" id="plakat-frame">
         <canvas id="plakat-canvas" aria-label="Handlungskompetenz-Plakat"></canvas>
         <div class="plakat-hotspots" id="plakat-hotspots"></div>
         <div class="plakat-loading" id="plakat-loading"><span class="loader"></span> Plakat wird geladen …</div>
       </div>
-      <div class="plakat-edit-bar" id="plakat-edit-bar" hidden>
-        <span>Bearbeiten: Klicke aufs Plakat, um ein Kästchen zu setzen. Ziehe es an die richtige Stelle, weise eine HK zu.</span>
-        <div class="plakat-edit-actions">
-          <button id="plakat-export" class="btn btn-primary" type="button">Als JSON exportieren</button>
-          <button id="plakat-clear" class="btn btn-ghost" type="button">Lokalen Entwurf verwerfen</button>
-        </div>
-      </div>
     </section>
 
-    <div class="section-head" style="margin-top:var(--space-7)">
+    <div class="hf-section-head">
       <h2>Die 7 Handlungsfelder</h2>
       <button id="hf-toggle-all" class="btn btn-ghost" type="button">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="margin-right:4px; transform:rotate(${allOpen ? "180deg" : "0deg"})"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2559,6 +2555,14 @@ function renderKompetenzen() {
       </button>
     </div>
     <div class="hf-list" id="hf-list"></div>
+
+    <div class="plakat-fs" id="plakat-fs" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-label="Plakat in Vollbild">
+      <button class="plakat-fs-back" id="plakat-fs-back" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Zurück
+      </button>
+      <img class="plakat-fs-img" id="plakat-fs-img" alt="Handlungskompetenz-Plakat (Vollbild)" />
+    </div>
   `));
 
   // --- Plakat rendern (mit Sicherheitsnetz: hängt das Rendern, Overlay trotzdem ausblenden)
@@ -2594,34 +2598,25 @@ function renderKompetenzen() {
     updateHfToggleAll();
   });
 
-  // --- Hotspot-Editor
-  let editMode = false;
-  $("#plakat-edit-toggle").addEventListener("click", () => {
-    editMode = !editMode;
-    $("#plakat-edit-toggle").textContent = editMode ? "Bearbeiten beenden" : "Bereiche bearbeiten";
-    $("#plakat-edit-bar").hidden = !editMode;
-    frame.classList.toggle("is-editing", editMode);
-    drawPlakatHotspots(editMode);
-  });
-  $("#plakat-export").addEventListener("click", exportPlakatHotspots);
-  $("#plakat-clear").addEventListener("click", () => {
-    if (!confirm("Lokalen Entwurf verwerfen und die gespeicherte Datei (data/plakat-hotspots.json) laden?")) return;
-    localStorage.removeItem(PLAKAT_HS_KEY);
-    drawPlakatHotspots(editMode);
-  });
-
-  // Klick aufs Plakat im Edit-Modus = neuen Hotspot setzen
-  $("#plakat-hotspots").addEventListener("click", (e) => {
-    if (!editMode) return;
-    if (e.target.closest(".plakat-hotspot")) return; // nicht auf bestehenden
-    const rect = frame.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    const arr = loadPlakatHotspots(true);
-    arr.push({ hk: "", x: Math.max(0, x - 6), y: Math.max(0, y - 4), w: 12, h: 8 });
-    savePlakatHotspots(arr);
-    drawPlakatHotspots(true);
-  });
+  // --- Vollbild-Ansicht des Plakats (über den ganzen Bildschirm, mit Zurück-Button)
+  const fs = $("#plakat-fs");
+  const fsImg = $("#plakat-fs-img");
+  const onFsKey = (e) => { if (e.key === "Escape") closeFs(); };
+  const openFs = () => {
+    if (!fsImg.src) fsImg.src = "assets/img/plakat.webp";
+    fs.hidden = false; fs.setAttribute("aria-hidden", "false");
+    document.body.classList.add("plakat-fs-open");
+    document.addEventListener("keydown", onFsKey);
+  };
+  function closeFs() {
+    fs.hidden = true; fs.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("plakat-fs-open");
+    document.removeEventListener("keydown", onFsKey);
+  }
+  $("#plakat-expand").addEventListener("click", openFs);
+  $("#plakat-fs-back").addEventListener("click", closeFs);
+  // Klick auf den dunklen Hintergrund (nicht aufs Bild) schliesst ebenfalls
+  fs.addEventListener("click", (e) => { if (e.target === fs) closeFs(); });
   // Kein Resize-Re-Render nötig: Canvas skaliert per CSS, Hotspots sind prozentual.
 }
 
