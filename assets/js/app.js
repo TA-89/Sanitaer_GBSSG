@@ -2692,6 +2692,30 @@ async function renderPlakatCanvas(frame) {
   const canvas = $("#plakat-canvas");
   if (!canvas || !frame) return;
   if (plakatRendered && canvas.width > 0) return; // nicht erneut rendern
+  // Schnellpfad: vorgerendertes Bild laden (statt die 8.7 MB grosse plakat.pdf
+  // jedes Mal live per PDF.js zu rendern – das war der Grund fürs langsame Laden).
+  // assets/img/plakat.webp wird aus pdfs/plakat.pdf erzeugt (Canvas-Export, 2000px).
+  try {
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.style.width = "100%";
+        canvas.style.height = "auto";
+        plakatRatio = img.naturalHeight / img.naturalWidth;
+        ctx.drawImage(img, 0, 0);
+        resolve();
+      };
+      img.onerror = reject;
+      img.src = "assets/img/plakat.webp";
+    });
+    plakatRendered = true;
+    return;
+  } catch (e) {
+    // Fallback (Bild fehlt): wie bisher live aus dem PDF rendern.
+  }
   const lib = await ensurePdfJs();
   const pdf = await lib.getDocument({ url: "pdfs/plakat.pdf" }).promise;
   const page = await pdf.getPage(1);

@@ -2808,6 +2808,10 @@ body.has-overlay { overflow: hidden; }
    untereinander → etwa halbe Höhe; dazu Footer aus + kompaktere Abstände.
    ========================================================================== */
 body.is-embed .footer { display: none; }
+/* Teams/Embed: die Klasse ist über den Reiter-Deeplink fix vorgegeben → die
+   Klassen-Auswahl (Dropdown) und der Lehrer-Bereich werden dort nicht gebraucht. */
+body.is-embed .sidebar-klasse { display: none; }
+body.is-embed .sidebar-lehrer { display: none; }
 /* Links ausgerichtet (kein Zentrieren). fitEmbed() in app.js setzt per JS ein
    zoom < 1, bis der ganze Schultag in die sichtbare iframe-Höhe passt. zoom
    skaliert den Layout-Fluss mit (inkl. linker Ausrichtung). Blöcke bleiben
