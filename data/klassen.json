@@ -11,16 +11,16 @@
     }
   },
   "klassen": [
-    { "id": "SAIa26-30", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 3, "halbtag": "Vormittag",  "lehrjahr": 1, "semester": 1, "periode": "H2026" },
-    { "id": "SAIb26-30", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 5, "halbtag": "Nachmittag", "lehrjahr": 1, "semester": 1, "periode": "H2026" },
-    { "id": "SAIa25-29", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 2, "halbtag": "Vormittag",  "lehrjahr": 2, "semester": 3, "periode": "H2026" },
-    { "id": "SAIb25-29", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 2, "halbtag": "Nachmittag", "lehrjahr": 2, "semester": 3, "periode": "H2026" },
-    { "id": "SAIa24-28", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 1, "halbtag": "Vormittag",  "lehrjahr": 3, "semester": 5, "periode": "H2026" },
-    { "id": "SAIb24-28", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 5, "halbtag": "Vormittag",  "lehrjahr": 3, "semester": 5, "periode": "H2026" },
-    { "id": "SAIa23-27", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 4, "halbtag": "Nachmittag", "lehrjahr": 4, "semester": 7, "periode": "H2026" },
-    { "id": "SAIb23-27", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 3, "halbtag": "Nachmittag", "lehrjahr": 4, "semester": 7, "periode": "H2026" },
-    { "id": "SSPa26-28", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 1, "halbtag": "Nachmittag", "lehrjahr": 1, "semester": 1, "periode": "H2026" },
-    { "id": "SSPb26-28", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 4, "halbtag": "Vormittag",  "lehrjahr": 1, "semester": 1, "periode": "H2026" },
-    { "id": "SSPa25-27", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 3, "halbtag": "Nachmittag", "lehrjahr": 2, "semester": 3, "periode": "H2026" }
+    { "id": "SAIa26-30", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 3, "halbtag": "Vormittag",  "lehrjahr": 1, "semester": 1, "periode": "H2026", "master": "1.Semester.xlsx" },
+    { "id": "SAIb26-30", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 5, "halbtag": "Nachmittag", "lehrjahr": 1, "semester": 1, "periode": "H2026", "master": "1.Semester_TAR.xlsx" },
+    { "id": "SAIa25-29", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 2, "halbtag": "Vormittag",  "lehrjahr": 2, "semester": 3, "periode": "H2026", "master": "3.Semester.xlsx" },
+    { "id": "SAIb25-29", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 2, "halbtag": "Nachmittag", "lehrjahr": 2, "semester": 3, "periode": "H2026", "master": "3.Semester.xlsx" },
+    { "id": "SAIa24-28", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 1, "halbtag": "Vormittag",  "lehrjahr": 3, "semester": 5, "periode": "H2026", "master": "5.Semester.xlsx" },
+    { "id": "SAIb24-28", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 5, "halbtag": "Vormittag",  "lehrjahr": 3, "semester": 5, "periode": "H2026", "master": "5.Semester.xlsx" },
+    { "id": "SAIa23-27", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 4, "halbtag": "Nachmittag", "lehrjahr": 4, "semester": 7, "periode": "H2026", "master": "7.Semester.xlsx" },
+    { "id": "SAIb23-27", "bildungsgang": "EFZ", "beruf": "Sanitärinstallateur/in EFZ", "wochentag": 3, "halbtag": "Nachmittag", "lehrjahr": 4, "semester": 7, "periode": "H2026", "master": "7.Semester.xlsx" },
+    { "id": "SSPa26-28", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 1, "halbtag": "Nachmittag", "lehrjahr": 1, "semester": 1, "periode": "H2026", "master": "EBA_1.Semester.xlsx" },
+    { "id": "SSPb26-28", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 4, "halbtag": "Vormittag",  "lehrjahr": 1, "semester": 1, "periode": "H2026", "master": "EBA_1.Semester.xlsx" },
+    { "id": "SSPa25-27", "bildungsgang": "EBA", "beruf": "Haustechnikpraktiker/in EBA (Sanitär)", "wochentag": 3, "halbtag": "Nachmittag", "lehrjahr": 2, "semester": 3, "periode": "H2026", "master": "EBA_3.Semester.xlsx" }
   ]
 }

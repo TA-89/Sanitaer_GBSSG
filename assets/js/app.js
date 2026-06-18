@@ -491,8 +491,10 @@ function schooldayContent(klasseId, dateISO) {
 // da der Master dieselben KW-Wochen auslässt). Die Quelle ist bewusst
 // austauschbar: heute fetch aus dem Repo, später vom Backend (gleicher Parser).
 // ===========================================================================
-const MASTER_CACHE_KEY = "sanigbs:master:v1";
-const MASTER_URL = (sem) => `data/master/${sem}.Semester.xlsx`;
+const MASTER_CACHE_KEY = "sanigbs:master:v2";   // keyed by Dateiname
+const MASTER_URL = (file) => `data/master/${encodeURIComponent(file)}`;
+// Master-Datei einer Klasse: explizit aus klassen.json, sonst Fallback <semester>.Semester.xlsx
+const klasseMasterFile = (klasse) => klasse ? (klasse.master || `${klasse.semester}.Semester.xlsx`) : null;
 
 let _xlsxPromise = null;
 function loadSheetJs() {
@@ -542,6 +544,12 @@ function parseStSheet(XLSX, ws) {
   };
   const tr1 = titleRow(range.s.r, r13);
   const tr2 = titleRow(rPause >= 0 ? rPause + 1 : r13 + 1, r45 >= 0 ? r45 : range.e.r + 1);
+  // Auftrags-Nr (Muster N.M) irgendwo in der Titelzeile suchen – Spalte variiert je Master (G oder F)
+  const auftragInRow = (r) => {
+    if (r < 0) return "";
+    for (let c = range.s.c; c <= range.e.c; c++) { const v = cs(r, c); if (/^\d+\.\d+[a-z]?$/i.test(v)) return v; }
+    return "";
+  };
   const bulletsFrom = (start, stop) => {
     const out = [];
     for (let r = start; r <= stop; r++) {
@@ -578,8 +586,8 @@ function parseStSheet(XLSX, ws) {
   }
   return {
     bloecke: [
-      { titel: tr1 >= 0 ? cs(tr1, B) : "", auftrag: tr1 >= 0 ? cs(tr1, G) : "" },
-      { titel: tr2 >= 0 ? cs(tr2, B) : "", auftrag: tr2 >= 0 ? cs(tr2, G) : "" },
+      { titel: tr1 >= 0 ? cs(tr1, B) : "", auftrag: auftragInRow(tr1) },
+      { titel: tr2 >= 0 ? cs(tr2, B) : "", auftrag: auftragInRow(tr2) },
     ],
     lektionen,
     hausaufgabenFaellig: { text: "", fotos: [] },
@@ -590,7 +598,7 @@ function parseStSheet(XLSX, ws) {
 function parseMasterWorkbook(XLSX, wb) {
   const byKw = {}, bySt = {};
   wb.SheetNames.forEach((name) => {
-    const m = name.match(/^ST_(\d+)_KW(\d+)/i);
+    const m = name.match(/^ST_(\d+)_KW_?(\d+)/i);
     if (!m) return;
     const content = parseStSheet(XLSX, wb.Sheets[name]);
     if (!content) return;
@@ -600,42 +608,40 @@ function parseMasterWorkbook(XLSX, wb) {
   return { byKw, bySt };
 }
 
-// Master eines Semesters laden (gecacht in localStorage). force=true → neu vom Server.
-async function ensureMaster(semester, force) {
-  semester = Number(semester);
-  if (!semester) return null;
+// Master-Datei laden (gecacht in localStorage, keyed by Dateiname). force=true → neu vom Server.
+async function ensureMaster(file, force) {
+  if (!file) return null;
   if (!state.tpMaster) state.tpMaster = {};
-  if (!force && state.tpMaster[semester] !== undefined) return state.tpMaster[semester];
+  if (!force && state.tpMaster[file] !== undefined) return state.tpMaster[file];
   if (!force) {
-    try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); if (c[semester]) { state.tpMaster[semester] = c[semester]; return c[semester]; } } catch {}
+    try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); if (c[file]) { state.tpMaster[file] = c[file]; return c[file]; } } catch {}
   }
   try {
-    const res = await fetch(MASTER_URL(semester) + (force ? "?t=" + Date.now() : ""), { cache: force ? "reload" : "default" });
-    if (!res.ok) { state.tpMaster[semester] = null; return null; }
+    const res = await fetch(MASTER_URL(file) + (force ? "?t=" + Date.now() : ""), { cache: force ? "reload" : "default" });
+    if (!res.ok) { state.tpMaster[file] = null; return null; }
     const buf = await res.arrayBuffer();
     const XLSX = await loadSheetJs();
     const parsed = parseMasterWorkbook(XLSX, XLSX.read(buf, { type: "array" }));
-    state.tpMaster[semester] = parsed;
-    try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); c[semester] = parsed; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
+    state.tpMaster[file] = parsed;
+    try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); c[file] = parsed; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
     return parsed;
-  } catch (e) { console.warn("Master laden fehlgeschlagen:", e); state.tpMaster[semester] = null; return null; }
+  } catch (e) { console.warn("Master laden fehlgeschlagen:", e); state.tpMaster[file] = null; return null; }
 }
 
 // Content aus dem Master für Klasse + Datum (über die Kalenderwoche zugeordnet)
 function schooldayMaster(klasseId, dateISO) {
-  const klasse = klasseById(klasseId);
-  if (!klasse || !state.tpMaster) return null;
-  const m = state.tpMaster[Number(klasse.semester)];
+  const file = klasseMasterFile(klasseById(klasseId));
+  if (!file || !state.tpMaster) return null;
+  const m = state.tpMaster[file];
   if (!m || !m.byKw) return null;
   return m.byKw[isoWeekNum(parseISO(dateISO))] || null;
 }
 
 // "Aktualisieren": Cache leeren + Master neu laden
-async function masterRefresh(semester) {
-  semester = Number(semester);
-  try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); delete c[semester]; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
-  if (state.tpMaster) delete state.tpMaster[semester];
-  return ensureMaster(semester, true);
+async function masterRefresh(file) {
+  try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); delete c[file]; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
+  if (state.tpMaster) delete state.tpMaster[file];
+  return ensureMaster(file, true);
 }
 
 // Hat ein Schultag überhaupt gepflegte Inhalte?
@@ -959,6 +965,7 @@ function renderTagesprogramm(params) {
               <span class="tp-dc-date">${escapeHtml(formatLang(dayDate))}</span>
             </div>
             <span class="tp-dc-klasse">Klasse ${escapeHtml(klasse.id)}</span>
+            <span class="tp-dc-sem">${klasse.semester}. Semester</span>
           </div>
         </div>
         ${navHtml}
@@ -1280,12 +1287,13 @@ function renderEditorUI(v) {
   if (masterBtn) masterBtn.addEventListener("click", async () => {
     const kl = klasseById($("#ed-klasse").value);
     if (!kl) return;
+    const file = klasseMasterFile(kl);
     const prev = masterBtn.textContent; masterBtn.disabled = true; masterBtn.textContent = "Lädt …";
-    const parsed = await masterRefresh(kl.semester);
+    const parsed = await masterRefresh(file);
     masterBtn.disabled = false; masterBtn.textContent = prev;
     const n = parsed && parsed.bySt ? Object.keys(parsed.bySt).length : 0;
-    if (n) { alert(`Masterplan ${kl.semester}. Semester neu geladen: ${n} Schultage übernommen.`); drawEditorForm($("#ed-klasse").value, tagSelect.value); }
-    else alert(`Kein Masterplan für das ${kl.semester}. Semester gefunden (Datei data/master/${kl.semester}.Semester.xlsx).`);
+    if (n) { alert(`Masterplan «${file}» neu geladen: ${n} Schultage übernommen.`); drawEditorForm($("#ed-klasse").value, tagSelect.value); }
+    else alert(`Kein Masterplan «${file}» gefunden (erwartet unter data/master/).`);
   });
 
   // Teams-Link kopieren (pro Klasse) – mit Fallback für ältere Browser
@@ -1610,7 +1618,7 @@ async function route() {
     if (hash === "#/" || hash === "" || hash.startsWith("#/klasse") || hash.startsWith("#/semester") || hash.startsWith("#/lehrer")) {
       const mk = hash.match(/^#\/klasse\/([^\/]+)/);
       const klasse = klasseById(mk ? decodeURIComponent(mk[1]) : getActiveKlasseId());
-      if (klasse) await ensureMaster(klasse.semester);
+      if (klasse) await ensureMaster(klasseMasterFile(klasse));
     }
   } catch {}
   for (const r of routes) {
