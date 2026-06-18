@@ -1859,9 +1859,9 @@ function updateActiveNav() {
   const hash = location.hash || "#/";
   // Hauptbereiche: Tagesprogramm (#/, #/klasse, #/semester) · Entdecken · Suchen · Kompetenzen
   let key = "tagesprogramm";
-  if (hash.startsWith("#/suche")) key = "suche";
+  if (hash.startsWith("#/suche") || hash.startsWith("#/auftrag")) key = "suche";
   else if (hash.startsWith("#/kompetenzen") || hash.startsWith("#/plakat")) key = "kompetenzen";
-  else if (hash.startsWith("#/ablauf") || hash.startsWith("#/entdecken") || hash.startsWith("#/auftrag") || /^#\/semester\/\d/.test(hash)) key = "entdecken";
+  else if (hash.startsWith("#/ablauf") || hash.startsWith("#/entdecken") || /^#\/semester\/\d/.test(hash)) key = "entdecken";
   else if (hash.startsWith("#/klasse") || hash === "#/" || hash === "" || hash.startsWith("#/semester")) key = "tagesprogramm";
   else key = ""; // Info / Lehrer / Edit – keine Hauptkachel aktiv
   document.body.classList.toggle("page-tagesprogramm", key === "tagesprogramm");
@@ -2184,8 +2184,11 @@ function renderAuftrag({ id }) {
   const accentColor = hkByCode(hkCodes[0])?.handlungsfeld?.farbe || "var(--water-deep)";
 
   v.appendChild(el(`
+    <a class="back-link" href="#/suche">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Zurück zu den Lernaufträgen
+    </a>
     <p class="breadcrumb">
-      <a href="#/">Übersicht</a> ·
       ${escapeHtml(sem?.titel || "")} ·
       ${escapeHtml(a.auftragNummer)}
     </p>

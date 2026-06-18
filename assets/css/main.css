@@ -788,6 +788,18 @@ body.page-tagesprogramm .tp-dc-body {
 }
 .section-head h2 { margin: 0; }
 .section-head .meta { color: var(--ink-quiet); font-size: 0.92rem; }
+/* Zurück-Button (z. B. Auftrags-Detail → Lernaufträge) */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.92rem; font-weight: 600; color: var(--ink);
+  text-decoration: none; margin-bottom: var(--space-2);
+  padding: 6px 12px 6px 8px; border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--paper);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.back-link:hover { background: var(--bg-soft); border-color: var(--ink-quiet); }
+.back-link svg { flex: none; }
+
 .breadcrumb {
   color: var(--ink-quiet); font-size: 0.85rem; margin-bottom: var(--space-2);
 }
