@@ -491,7 +491,7 @@ function schooldayContent(klasseId, dateISO) {
 // da der Master dieselben KW-Wochen auslässt). Die Quelle ist bewusst
 // austauschbar: heute fetch aus dem Repo, später vom Backend (gleicher Parser).
 // ===========================================================================
-const MASTER_CACHE_KEY = "sanigbs:master:v2";   // keyed by Dateiname
+const MASTER_CACHE_KEY = "sanigbs:master:v3";   // keyed by Dateiname (vN bei Parser-Änderungen erhöhen!)
 const MASTER_URL = (file) => `data/master/${encodeURIComponent(file)}`;
 // Master-Datei einer Klasse: explizit aus klassen.json, sonst Fallback <semester>.Semester.xlsx
 const klasseMasterFile = (klasse) => klasse ? (klasse.master || `${klasse.semester}.Semester.xlsx`) : null;
@@ -1038,12 +1038,18 @@ function renderTagesprogramm(params) {
       </header>`;
     let body;
     if (content && content.ausfall) {
-      // Verschoben/ausgefallen: nur Hinweis; der Masterplan rutscht ab hier um einen Tag weiter
+      // Verschoben/ausgefallen: Alternativprogramm/Grund (+ optional Links & Bilder).
+      // Der Masterplan rutscht ab hier um einen Tag weiter.
       const txt = (content.ausfallText || "").trim();
+      const fotos = (content.fotos || []).filter(Boolean);
+      const fotoHtml = fotos.length
+        ? `<div class="ha-fotos">${fotos.map((f) => { const url = f.url || f; return `<a class="ha-foto" href="${escapeHtml(url)}" target="_blank" rel="noopener"><img src="${escapeHtml(url)}" alt="${escapeHtml(f.label || "Bild")}" loading="lazy"></a>`; }).join("")}</div>`
+        : "";
       body = `<div class="tp-ausfall">
         <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v6M12 16v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        <div><strong>Kein regulärer Unterricht – Schultag verschoben/ausgefallen.</strong>${txt ? `<p>${escapeHtml(txt)}</p>` : ""}<p class="tp-ausfall-hint">Die Inhalte des Masterplans verschieben sich ab hier um einen Schultag.</p></div>
+        <div><strong>Kein regulärer BKU – Alternativprogramm</strong>${txt ? `<p>${escapeHtml(txt).replace(/\n/g, "<br>")}</p>` : ""}<p class="tp-ausfall-hint">Der reguläre Masterplan rutscht ab hier um einen Schultag weiter.</p></div>
       </div>`;
+      body += buildExtrasHtml(content) + fotoHtml;
     } else {
       body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
       body += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
@@ -1459,6 +1465,7 @@ function drawEditorForm(klasseId, dateISO) {
   const photos = {
     faellig: [...(c.hausaufgabenFaellig.fotos || [])],
     naechste: [...(c.hausaufgabenNaechste.fotos || [])],
+    ausfall: [...(c.fotos || [])],
   };
 
   const dt = parseISO(dateISO);
@@ -1490,11 +1497,20 @@ function drawEditorForm(klasseId, dateISO) {
   host.innerHTML = `
     <form class="ed-form" id="ed-day-form" autocomplete="off">
       <div class="ed-block ed-ausfall-box">
-        <label class="ed-ausfall-toggle"><input type="checkbox" id="ed-ausfall" ${c.ausfall ? "checked" : ""}> <strong>Dieser Schultag fällt aus / wird verschoben</strong></label>
-        <input class="ed-input" id="ed-ausfall-text" type="text" placeholder="Grund / Hinweis (z. B. „Feiertag – kein Unterricht“ oder „verschoben“)" value="${escapeHtml(c.ausfallText || "")}">
-        <p class="ed-hint">Ist das aktiv, zeigt dieser Schultag nur den Hinweis – und der Masterplan rutscht ab hier um einen Tag weiter (am Ende fällt ggf. der letzte, als Kompensation gerechnete Schultag weg).</p>
+        <label class="ed-ausfall-toggle"><input type="checkbox" id="ed-ausfall" ${c.ausfall ? "checked" : ""}> <strong>Dieser Schultag fällt aus / wird verschoben (Alternativprogramm)</strong></label>
+        <div class="ed-ausfall-fields" id="ed-ausfall-fields" ${c.ausfall ? "" : "hidden"}>
+          <p class="ed-hint" style="margin:6px 0 10px">Trag hier das <strong>Alternativprogramm</strong> oder den <strong>Ausfallgrund</strong> ein (z. B. „ABU-Sonderwoche – kein BKU"). Der reguläre Masterplan rutscht ab diesem Tag um einen Schultag weiter.</p>
+          <textarea class="ed-input" id="ed-ausfall-text" rows="3" placeholder="Text / Alternativprogramm / Grund …">${escapeHtml(c.ausfallText || "")}</textarea>
+          <label class="ed-label" style="margin-top:12px">Links &amp; PDFs (optional)</label>
+          <div class="ed-links" id="ed-ausfall-links">${(c.ausfall ? [...(c.pdfs || []), ...(c.links || [])].filter((l) => l && l.url).map((l) => linkRowHtml(l.label, l.url)).join("") : "") || linkRowHtml("", "")}</div>
+          <button type="button" class="btn btn-ghost btn-sm" id="ed-ausfall-link-add">+ Link hinzufügen</button>
+          <label class="ed-label" style="margin-top:12px">Bilder (optional)</label>
+          <div class="ed-fotos" data-kind="ausfall"></div>
+          <div class="ed-foto-actions"><label class="btn btn-ghost btn-sm">📷 Foto (PC)<input type="file" accept="image/*" multiple hidden data-foto="ausfall"></label></div>
+        </div>
       </div>
 
+      <div class="ed-normal-fields" id="ed-normal-fields" ${c.ausfall ? "hidden" : ""}>
       <div class="ed-block ha-edit ha-faellig">
         <label class="ed-label" for="ed-ha-f">Hausaufgaben auf diesen Schultag</label>
         <textarea class="ed-input" id="ed-ha-f" rows="2" placeholder="Was war auf heute zu erledigen?">${escapeHtml(c.hausaufgabenFaellig.text || "")}</textarea>
@@ -1534,6 +1550,7 @@ function drawEditorForm(klasseId, dateISO) {
         </div>
         <p class="ed-hint">Markiert den Tag als Prüfungstag (Kachel orange, „Prüfung" rot). Über die Auftrags-Nr werden die Lernziele automatisch verlinkt und 2 Wochen vorher als Hinweis mit Datum angezeigt.</p>
       </div>
+      </div><!-- /ed-normal-fields -->
 
       <div class="ed-bar">
         <button class="btn btn-brand" type="submit">Speichern</button>
@@ -1551,7 +1568,26 @@ function drawEditorForm(klasseId, dateISO) {
       `<div class="ed-foto"><img src="${escapeHtml(f.url || f)}" alt="${escapeHtml(f.label || "Foto")}"><button type="button" class="ed-foto-del" data-kind="${kind}" data-i="${i}" title="Entfernen">✕</button></div>`
     ).join("");
   };
-  drawStrip("faellig"); drawStrip("naechste");
+  drawStrip("faellig"); drawStrip("naechste"); drawStrip("ausfall");
+
+  // Ausfall-Umschaltung: Alternativprogramm-Felder ein-/ausblenden, normale Felder umgekehrt
+  const ausfallChk = host.querySelector("#ed-ausfall");
+  const ausfallFields = host.querySelector("#ed-ausfall-fields");
+  const normalFields = host.querySelector("#ed-normal-fields");
+  const syncAusfall = () => {
+    const on = ausfallChk && ausfallChk.checked;
+    if (ausfallFields) ausfallFields.hidden = !on;
+    if (normalFields) normalFields.hidden = !!on;
+  };
+  if (ausfallChk) ausfallChk.addEventListener("change", syncAusfall);
+  // Link-Zeile im Ausfall-Block hinzufügen
+  const ausfallLinkAdd = host.querySelector("#ed-ausfall-link-add");
+  if (ausfallLinkAdd) ausfallLinkAdd.addEventListener("click", () => {
+    const wrap = host.querySelector("#ed-ausfall-links");
+    wrap.insertAdjacentHTML("beforeend", linkRowHtml("", ""));
+    const last = wrap.querySelector(".ed-link-row:last-child .ed-link-label");
+    if (last) last.focus();
+  });
 
   // Foto-Upload (PC)
   host.querySelectorAll("input[data-foto]").forEach((inp) => {
@@ -1593,7 +1629,13 @@ function drawEditorForm(klasseId, dateISO) {
     // Schultag verschoben/ausgefallen → nur Hinweis speichern, Masterplan rutscht ab hier weiter
     const ausfallEl = host.querySelector("#ed-ausfall");
     if (ausfallEl && ausfallEl.checked) {
-      edits[tpEditKey(klasseId, dateISO)] = { ausfall: true, ausfallText: val("#ed-ausfall-text") };
+      const aLinks = [], aPdfs = [];
+      host.querySelectorAll("#ed-ausfall-links .ed-link-row").forEach((r) => {
+        const url = r.querySelector(".ed-link-url").value.trim(); if (!url) return;
+        const label = r.querySelector(".ed-link-label").value.trim() || url;
+        if (/\.pdf(\?|#|$)/i.test(url)) aPdfs.push({ label, url }); else aLinks.push({ label, url });
+      });
+      edits[tpEditKey(klasseId, dateISO)] = { ausfall: true, ausfallText: val("#ed-ausfall-text"), links: aLinks, pdfs: aPdfs, fotos: photos.ausfall };
       if (saveTpEdits(edits)) { const s = $("#ed-saved"); s.hidden = false; setTimeout(() => { s.hidden = true; }, 1800); }
       return;
     }

@@ -2766,7 +2766,7 @@ body.is-embed .footer { display: none; }
    skaliert den Layout-Fluss mit (inkl. linker Ausrichtung). Blöcke bleiben
    untereinander (Standard-Layout). */
 body.is-embed .view {
-  margin: var(--space-3) 0 var(--space-4);
+  margin: var(--space-3) auto var(--space-4);   /* zentriert, unabhängig von der Bildschirmbreite */
   width: 100%;
   max-width: 1040px;
 }
