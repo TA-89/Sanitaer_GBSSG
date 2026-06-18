@@ -521,50 +521,100 @@ function isoWeekNum(d) {
 const cleanBullet = (s) => String(s || "").replace(/^[\s*•·\-–]+/, "").trim();
 
 // Ein ST_n-Blatt → Content-Objekt im Tagesprogramm-Format (1–3 / 4–5 bleibt erhalten)
+// Dispatcher: erkennt das Master-Format und parst entsprechend.
+// "rich" (TAR-Layout): A1=„Unterrichtsplanung…", Themen in Spalte A, Inhalt in D, „Lektion N" in B.
+// "compact" (übrige Master): B1=„Unterrichtsverlauf", Titel in B, Inhalt in C.
 function parseStSheet(XLSX, ws) {
   if (!ws || !ws["!ref"]) return null;
   const range = XLSX.utils.decode_range(ws["!ref"]);
   const cs = (r, c) => { const cell = ws[XLSX.utils.encode_cell({ r, c })]; return cell && cell.v != null ? String(cell.v).trim() : ""; };
+  let rich = /Unterrichtsplanung/i.test(cs(0, 0) + " " + cs(0, 1));
+  if (!rich) { for (let r = range.s.r; r <= Math.min(range.e.r, range.s.r + 20); r++) { if (/^Lektion\s*\d/i.test(cs(r, 1))) { rich = true; break; } } }
+  return rich ? parseRichSheet(XLSX, ws, range, cs) : parseCompactSheet(XLSX, ws, range, cs);
+}
+
+// TAR/„rich"-Layout: Themen in Spalte A (+ Auftrag N.M in der Zeile), Lektionen „Lektion N" in B,
+// Aktivitäten in Spalte D; Pause/Hausaufgaben in Spalte A, „Ausblick nächste Woche" in Spalte G.
+function parseRichSheet(XLSX, ws, range, cs) {
+  const A = 0, B = 1, D = 3, G = 6;
+  const auftragInRow = (r) => { if (r < 0) return ""; for (let c = range.s.c; c <= range.e.c; c++) { const v = cs(r, c); if (/^\d+\.\d+[a-z]?$/i.test(v)) return v; } return ""; };
+  let rPause = -1, rHA = -1;
+  for (let r = range.s.r; r <= range.e.r; r++) { const a = cs(r, A); if (/Pause/i.test(a) && rPause < 0) rPause = r; if (/Hausaufgaben/i.test(a) && rHA < 0) rHA = r; }
+  const endR = rHA >= 0 ? rHA : range.e.r + 1;
+  const isLabelA = (a) => /Unterrichtsplanung|Themen:|Lernziele|^Zeit$|Pause|Hausaufgaben|Administratives|Ausblick/i.test(a);
+  const topicRow = (from, to) => { for (let r = from; r < to; r++) { const a = cs(r, A); if (a && !isLabelA(a) && auftragInRow(r)) return r; } return -1; };
+  const tr1 = topicRow(range.s.r, rPause >= 0 ? rPause : endR);
+  const tr2 = topicRow(rPause >= 0 ? rPause + 1 : endR, endR);
+  const lessons = [];
+  for (let r = range.s.r; r < endR; r++) { const m = cs(r, B).match(/^Lektion\s*(\d+)/i); if (m) lessons.push({ n: Number(m[1]), r }); }
+  const lektionen = [0, 1, 2, 3, 4].map(() => ({ thema: "", notizen: "" }));
+  lessons.forEach((ls, k) => {
+    const stop = k + 1 < lessons.length ? lessons[k + 1].r : endR;
+    const acts = [];
+    for (let r = ls.r; r < stop; r++) { const d = cs(r, D); if (!d) continue; const v = cleanBullet(d); if (v && !/^Sie\b/i.test(v)) acts.push(v); }
+    const i = ls.n - 1;
+    if (i >= 0 && i < 5) { lektionen[i].thema = acts[0] || ""; if (acts.length > 1) lektionen[i].notizen = acts.slice(1).join(" · "); }
+  });
+  let haF = "", haNext = "";
+  if (rHA >= 0) {
+    for (let r = rHA; r <= range.e.r; r++) {
+      const a = cs(r, A); if (a && !/Hausaufgaben/i.test(a)) haF += (haF ? " " : "") + a;
+      const g = cs(r, G); if (g && !/Ausblick/i.test(g)) haNext += (haNext ? " " : "") + g;
+    }
+  }
+  const t1 = tr1 >= 0 ? cs(tr1, A) : "", a1 = auftragInRow(tr1);
+  return {
+    bloecke: [
+      { titel: t1, auftrag: a1 },
+      { titel: tr2 >= 0 ? cs(tr2, A) : t1, auftrag: tr2 >= 0 ? auftragInRow(tr2) : a1 },
+    ],
+    lektionen,
+    hausaufgabenFaellig: { text: haF, fotos: [] },
+    hausaufgabenNaechste: { text: haNext, fotos: [] },
+  };
+}
+
+// „compact"-Layout (1.Semester, 3/5/7, EBA): Titel in B, Auftrag in G/F, Inhalt in C.
+function parseCompactSheet(XLSX, ws, range, cs) {
   const B = 1, C = 2, E = 4, F = 5, G = 6;
-  let r13 = -1, r45 = -1, rPause = -1, rHA = -1;
+  // Strukturzeilen (kein Thema): Lektions-Labels (1-3 Lektion / 1.Lektion / 2+3.Lektion / 4-5 Lektion), Pause, Kopf, Hausaufgaben
+  const isLabel = (b) => /Lektion/i.test(b) || /^Pause$/i.test(b) || /Unterrichtsverlauf/i.test(b) || /Hausaufgaben/i.test(b) || /Administratives/i.test(b);
+  let rPause = -1, rHA = -1;
   for (let r = range.s.r; r <= range.e.r; r++) {
     const b = cs(r, B); if (!b) continue;
-    if (/^1\s*[-–]\s*3/.test(b)) r13 = r;
-    else if (/^4\s*[-–]\s*5/.test(b)) r45 = r;
-    else if (/^Pause$/i.test(b)) rPause = r;
-    else if (/Hausaufgaben/i.test(b)) rHA = r;
+    if (/^Pause$/i.test(b) && rPause < 0) rPause = r;
+    else if (/Hausaufgaben/i.test(b) && rHA < 0) rHA = r;
   }
-  if (r13 < 0) return null;
-  const titleRow = (from, to) => {
-    for (let r = from; r < to; r++) {
-      const b = cs(r, B);
-      if (b && !/Unterrichtsverlauf/i.test(b) && !/^[14]\s*[-–]\s*[35]/.test(b)) return r;
-    }
-    return -1;
-  };
-  const tr1 = titleRow(range.s.r, r13);
-  const tr2 = titleRow(rPause >= 0 ? rPause + 1 : r13 + 1, r45 >= 0 ? r45 : range.e.r + 1);
+  // Vormittag = bis Pause (LE 1–3), Nachmittag = Pause..Hausaufgaben (LE 4–5)
+  const morningEnd = rPause >= 0 ? rPause : (rHA >= 0 ? rHA : range.e.r + 1);
+  const afternoonStart = rPause >= 0 ? rPause + 1 : morningEnd;
+  const afternoonEnd = rHA >= 0 ? rHA : range.e.r + 1;
   // Auftrags-Nr (Muster N.M) irgendwo in der Titelzeile suchen – Spalte variiert je Master (G oder F)
   const auftragInRow = (r) => {
     if (r < 0) return "";
     for (let c = range.s.c; c <= range.e.c; c++) { const v = cs(r, c); if (/^\d+\.\d+[a-z]?$/i.test(v)) return v; }
     return "";
   };
-  const bulletsFrom = (start, stop) => {
+  // Erste Themen-Titelzeile in [from,to): Spalte B gefüllt und keine Strukturzeile
+  const titleRow = (from, to) => { for (let r = from; r < to; r++) { const b = cs(r, B); if (b && !isLabel(b)) return r; } return -1; };
+  // Aktivitäten (Stichpunkte) aus Spalte C in [from,to): ohne „Lernziele", „Auftrag N"-Header und „Sie …"-Lernziele
+  const activities = (from, to) => {
     const out = [];
-    for (let r = start; r <= stop; r++) {
+    for (let r = from; r < to; r++) {
       const c = cs(r, C); if (!c) continue;
-      if (/^Lernziele$/i.test(c)) break;
-      // reine Zwischenüberschriften "Auftrag 1", "Auftrag 1/2/3" überspringen (keine echte Aktivität)
+      if (/^Lernziele$/i.test(c)) continue;
       if (/^Auftrag\s*[\d.\/\s]+$/i.test(c)) continue;
-      const v = cleanBullet(c); if (v) out.push(v);
+      const v = cleanBullet(c);
+      if (!v || /^Sie\b/i.test(v)) continue;
+      out.push(v);
     }
     return out;
   };
-  const b1Stop = (rPause >= 0 ? rPause : (r45 >= 0 ? r45 : range.e.r)) - 1;
-  const b2Stop = (rHA >= 0 ? rHA : range.e.r) - 1;
-  const bul1 = bulletsFrom(r13, b1Stop);
-  const bul2 = r45 >= 0 ? bulletsFrom(r45, b2Stop) : [];
+  const tr1 = titleRow(range.s.r, morningEnd);
+  const tr2 = titleRow(afternoonStart, afternoonEnd);
+  if (tr1 < 0 && tr2 < 0) return null;
+  const bul1 = activities(range.s.r, morningEnd);
+  const bul2 = activities(afternoonStart, afternoonEnd);
   const lektionen = [0, 1, 2, 3, 4].map(() => ({ thema: "", notizen: "" }));
   const fill = (bullets, slots) => {
     bullets.forEach((b, i) => {
@@ -628,13 +678,27 @@ async function ensureMaster(file, force) {
   } catch (e) { console.warn("Master laden fehlgeschlagen:", e); state.tpMaster[file] = null; return null; }
 }
 
-// Content aus dem Master für Klasse + Datum (über die Kalenderwoche zugeordnet)
+// Ist dieser Schultag als verschoben/ausgefallen markiert? (Lehrer-Overlay-Flag)
+function isAusfall(klasseId, dateISO) {
+  const ov = loadTpEdits()[tpEditKey(klasseId, dateISO)];
+  return !!(ov && ov.ausfall);
+}
+
+// Content aus dem Master für Klasse + Datum – zugeordnet über die SCHULTAG-REIHENFOLGE.
+// Verschobene/ausgefallene Schultage (Ausfall) verbrauchen keinen Master-Schultag,
+// d. h. alles danach rutscht um einen Tag weiter (am Ende fällt ggf. der letzte – Kompensations- – Tag weg).
 function schooldayMaster(klasseId, dateISO) {
-  const file = klasseMasterFile(klasseById(klasseId));
+  const klasse = klasseById(klasseId);
+  const file = klasseMasterFile(klasse);
   if (!file || !state.tpMaster) return null;
   const m = state.tpMaster[file];
-  if (!m || !m.byKw) return null;
-  return m.byKw[isoWeekNum(parseISO(dateISO))] || null;
+  if (!m || !m.bySt) return null;
+  const days = computeSchooldays(klasse);
+  const idx = days.indexOf(dateISO);
+  if (idx < 0) return null;
+  let ausfallBefore = 0;
+  for (let i = 0; i < idx; i++) { if (isAusfall(klasseId, days[i])) ausfallBefore++; }
+  return m.bySt[idx - ausfallBefore + 1] || null;
 }
 
 // "Aktualisieren": Cache leeren + Master neu laden
@@ -647,12 +711,14 @@ async function masterRefresh(file) {
 // Hat ein Schultag überhaupt gepflegte Inhalte?
 function schooldayHasContent(content) {
   if (!content) return false;
+  if (content.ausfall) return true;
   if ((content.lektionen || []).some((l) => l && l.thema && l.thema.trim())) return true;
   if ((content.bloecke || []).some((b) => b && (b.titel || b.auftrag))) return true;
   return (content.links || []).length > 0 || (content.pdfs || []).length > 0;
 }
 // Kurzvorschau (Kachel): Block-Titel, sonst erstes Lektionsthema
 function ersteThemenVorschau(content) {
+  if (content && content.ausfall) return "Verschoben / Ausfall";
   const titel = [...new Set((content && content.bloecke || []).map((b) => b.titel).filter(Boolean))];
   if (titel.length) return titel.join(" · ");
   const l = (content?.lektionen || []).find((x) => x && x.thema && x.thema.trim());
@@ -970,15 +1036,25 @@ function renderTagesprogramm(params) {
         </div>
         ${navHtml}
       </header>`;
-    let body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
-    body += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
-    if (!hasContent) {
-      body += `<div class="tp-empty tp-empty-inline"><svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><h3>Dieser Schultag ist noch nicht geplant</h3></div>`;
+    let body;
+    if (content && content.ausfall) {
+      // Verschoben/ausgefallen: nur Hinweis; der Masterplan rutscht ab hier um einen Tag weiter
+      const txt = (content.ausfallText || "").trim();
+      body = `<div class="tp-ausfall">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v6M12 16v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <div><strong>Kein regulärer Unterricht – Schultag verschoben/ausgefallen.</strong>${txt ? `<p>${escapeHtml(txt)}</p>` : ""}<p class="tp-ausfall-hint">Die Inhalte des Masterplans verschieben sich ab hier um einen Schultag.</p></div>
+      </div>`;
     } else {
-      body += buildExtrasHtml(content);
+      body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
+      body += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
+      if (!hasContent) {
+        body += `<div class="tp-empty tp-empty-inline"><svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><h3>Dieser Schultag ist noch nicht geplant</h3></div>`;
+      } else {
+        body += buildExtrasHtml(content);
+      }
+      body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste");
+      body += buildPruefungVorabHtml(klasseId, days, idx);
     }
-    body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste");
-    body += buildPruefungVorabHtml(klasseId, days, idx);
     dayHost.innerHTML = `<article class="tp-daycard">${head}<div class="tp-dc-body">${body}</div></article>`;
     // Lernziele aus-/einklappen (runde Buttons)
     dayHost.querySelectorAll(".lz-btn").forEach((btn) => {
@@ -1413,6 +1489,12 @@ function drawEditorForm(klasseId, dateISO) {
 
   host.innerHTML = `
     <form class="ed-form" id="ed-day-form" autocomplete="off">
+      <div class="ed-block ed-ausfall-box">
+        <label class="ed-ausfall-toggle"><input type="checkbox" id="ed-ausfall" ${c.ausfall ? "checked" : ""}> <strong>Dieser Schultag fällt aus / wird verschoben</strong></label>
+        <input class="ed-input" id="ed-ausfall-text" type="text" placeholder="Grund / Hinweis (z. B. „Feiertag – kein Unterricht“ oder „verschoben“)" value="${escapeHtml(c.ausfallText || "")}">
+        <p class="ed-hint">Ist das aktiv, zeigt dieser Schultag nur den Hinweis – und der Masterplan rutscht ab hier um einen Tag weiter (am Ende fällt ggf. der letzte, als Kompensation gerechnete Schultag weg).</p>
+      </div>
+
       <div class="ed-block ha-edit ha-faellig">
         <label class="ed-label" for="ed-ha-f">Hausaufgaben auf diesen Schultag</label>
         <textarea class="ed-input" id="ed-ha-f" rows="2" placeholder="Was war auf heute zu erledigen?">${escapeHtml(c.hausaufgabenFaellig.text || "")}</textarea>
@@ -1507,6 +1589,14 @@ function drawEditorForm(klasseId, dateISO) {
   const val = (sel) => { const e = host.querySelector(sel); return e ? e.value.trim() : ""; };
   $("#ed-day-form").addEventListener("submit", (e) => {
     e.preventDefault();
+    const edits = loadTpEdits();
+    // Schultag verschoben/ausgefallen → nur Hinweis speichern, Masterplan rutscht ab hier weiter
+    const ausfallEl = host.querySelector("#ed-ausfall");
+    if (ausfallEl && ausfallEl.checked) {
+      edits[tpEditKey(klasseId, dateISO)] = { ausfall: true, ausfallText: val("#ed-ausfall-text") };
+      if (saveTpEdits(edits)) { const s = $("#ed-saved"); s.hidden = false; setTimeout(() => { s.hidden = true; }, 1800); }
+      return;
+    }
     const lekt = [];
     for (let i = 0; i < 5; i++) lekt.push({ thema: val(`#lk-thema-${i}`), material: [], notizen: val(`#lk-notiz-${i}`) });
     const bloecke = [0, 1].map((k) => ({ titel: val(`#ed-blk${k}-titel`), auftrag: val(`#ed-blk${k}-auf`) }));
@@ -1528,7 +1618,6 @@ function drawEditorForm(klasseId, dateISO) {
     };
     const pTitel = val("#ed-pruef-titel");
     if (pTitel) content.pruefung = { titel: pTitel, auftrag: val("#ed-pruef-auf") };
-    const edits = loadTpEdits();
     edits[tpEditKey(klasseId, dateISO)] = content;
     if (saveTpEdits(edits)) {
       const s = $("#ed-saved"); s.hidden = false; setTimeout(() => { s.hidden = true; }, 1800);

@@ -2685,6 +2685,17 @@ body.has-overlay { overflow: hidden; }
 .tp-daycard .tp-section-label h2 { font-size: 0.92rem; }
 .tp-empty-inline { padding: var(--space-4); margin-top: var(--space-2); }
 
+/* Verschobener/ausgefallener Schultag – Hinweis in der Tageskachel */
+.tp-ausfall { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--bg-soft); border: 1px solid var(--border); border-radius: var(--radius); color: var(--ink-soft); }
+.tp-ausfall svg { color: var(--ink-soft); flex-shrink: 0; margin-top: 1px; }
+.tp-ausfall strong { color: var(--ink); }
+.tp-ausfall p { margin: 4px 0 0; }
+.tp-ausfall-hint { font-size: 0.86rem; color: var(--ink-quiet); }
+
+/* Editor: Ausfall/Verschoben-Box */
+.ed-ausfall-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; cursor: pointer; margin-bottom: var(--space-2); }
+.ed-ausfall-toggle input { width: 18px; height: 18px; flex-shrink: 0; }
+
 /* Lernziele als ausklappbare runde Buttons (platzsparend, fully responsive) */
 .tp-lz2 { margin-bottom: var(--space-3); }
 .tp-lz2-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
