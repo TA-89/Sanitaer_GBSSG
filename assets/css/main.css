@@ -262,8 +262,8 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 .sidenav a svg { color: rgba(255, 255, 255, 0.5); }
 .sidenav a:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
 .sidenav a:hover svg { color: rgba(255, 255, 255, 0.8); }
-.sidenav a.is-active { background: rgba(255, 255, 255, 0.1); color: #fff; box-shadow: inset 3px 0 0 var(--brand); }
-.sidenav a.is-active svg { color: var(--brand); }
+.sidenav a.is-active { background: var(--brand); color: var(--ink); box-shadow: none; font-weight: 700; }
+.sidenav a.is-active svg { color: var(--ink); }
 .sidebar-foot { border-top-color: rgba(255, 255, 255, 0.12); }
 .sidebar-sublink { color: rgba(255, 255, 255, 0.6); }
 .sidebar-sublink:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
@@ -332,6 +332,12 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 /* Tagesprogramm: grüner Kopfbalken (fast) bis an den oberen Rand ziehen */
 body.page-tagesprogramm .view { margin-top: var(--space-2) !important; }
 body.is-embed.page-tagesprogramm .view { margin-top: 0 !important; }
+/* Tagesprogramm (normale Seite): Kachel füllt die Breite, responsive, mit dezenten Seitenrändern */
+body.page-tagesprogramm:not(.is-embed) .view {
+  width: auto; max-width: none;
+  margin-left: clamp(var(--space-3), 2.5vw, var(--space-6));
+  margin-right: clamp(var(--space-3), 2.5vw, var(--space-6));
+}
 
 @media (max-width: 860px) {
   .view { margin: var(--space-3) auto calc(72px + var(--space-6)); }
@@ -2781,24 +2787,7 @@ body.is-embed .lektion-row { padding: 5px 0; }
 body.is-embed .lektion-block-head { padding-bottom: 3px; }
 body.is-embed .lz-btn-inline { margin-top: 7px; }
 
-/* Teams/Embed: Sidebar standardmässig ausgeblendet, nur beim Hovern am linken
-   Rand als Overlay einblenden. Ein schmaler Griff (Lime) bleibt als Trigger sichtbar;
-   der Inhalt nutzt die volle Breite. (Nur breit; schmal greift die Bottomnav.) */
-@media (min-width: 861px) {
-  body.is-embed .sidebar {
-    position: fixed; top: 0; left: calc(8px - var(--sidebar-w)); height: 100vh; width: var(--sidebar-w); z-index: 60;
-    transition: left .2s ease, box-shadow .2s ease;
-  }
-  body.is-embed .sidebar::after {
-    content: ""; position: absolute; top: 0; right: 0; width: 8px; height: 100%;
-    background: var(--brand);
-  }
-  body.is-embed .sidebar:hover {
-    left: 0;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
-  }
-  body.is-embed .sidebar:hover::after { background: transparent; }
-}
+/* Teams/Embed: Sidebar verhält sich wie normal (ausgeklappt, mit Einklapp-Toggle). */
 
 /* "Alle Schultage": einklappbarer Kopf (Schrift etwas eingerückt) */
 .tp-weitere-head {

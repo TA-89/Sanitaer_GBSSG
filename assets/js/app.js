@@ -996,8 +996,6 @@ function renderTagesprogramm(params) {
 
   v.appendChild(el(`
     <section class="tp">
-      ${banner ? `<div class="tp-banner"><svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 16v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>${banner}</span></div>` : ""}
-
       <div id="tp-day"></div>
       <div id="tp-weitere"></div>
     </section>
@@ -1660,7 +1658,14 @@ function drawEditorForm(klasseId, dateISO) {
     };
     const pTitel = val("#ed-pruef-titel");
     if (pTitel) content.pruefung = { titel: pTitel, auftrag: val("#ed-pruef-auf") };
-    edits[tpEditKey(klasseId, dateISO)] = content;
+    // Komplett leer (z. B. Ausfall-Häkchen entfernt, ohne eigenen Inhalt) → Overlay löschen,
+    // damit wieder der Masterplan greift (statt eines leeren „noch offen"-Tags).
+    const isEmpty = !bloecke.some((b) => b.titel || b.auftrag)
+      && !lekt.some((l) => (l.thema || "").trim() || (l.notizen || "").trim())
+      && !links.length && !pdfs.length
+      && !val("#ed-ha-f") && !val("#ed-ha-n") && !pTitel;
+    if (isEmpty) delete edits[tpEditKey(klasseId, dateISO)];
+    else edits[tpEditKey(klasseId, dateISO)] = content;
     if (saveTpEdits(edits)) {
       const s = $("#ed-saved"); s.hidden = false; setTimeout(() => { s.hidden = true; }, 1800);
     }
@@ -1787,8 +1792,6 @@ function applyEmbedState() {
     else if (force === "0") embedded = false;
   } catch {}
   document.body.classList.toggle("is-embed", embedded);
-  // Im Embed (Teams) die Sidebar nie eingeklappt → beim Hover erscheinen Icons MIT Text.
-  if (embedded) document.body.classList.remove("sidebar-collapsed");
 }
 
 // Einbett-Link für einen Teams-Website-Reiter: öffnet das Tagesprogramm der Klasse
