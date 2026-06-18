@@ -1347,6 +1347,8 @@ function renderEditorUI(v) {
         </div>
       </div>
 
+      <p class="editor2-intro">So gehst du vor: <strong>1.</strong> oben <strong>Klasse</strong> &amp; <strong>Schultag</strong> wählen → <strong>2.</strong> unten anpassen (Titel, Lektionen, Hausaufgaben, Links/Bilder) → <strong>3.</strong> <strong>Speichern</strong>. Was du nicht änderst, kommt automatisch aus dem Excel-Masterplan. Fällt ein Tag aus, oben das Häkchen setzen und ein Alternativprogramm eintragen.</p>
+
       <div id="ed-form"></div>
 
       <div class="ed-footer">
@@ -1858,7 +1860,7 @@ function updateActiveNav() {
   let key = "tagesprogramm";
   if (hash.startsWith("#/suche")) key = "suche";
   else if (hash.startsWith("#/kompetenzen") || hash.startsWith("#/plakat")) key = "kompetenzen";
-  else if (hash.startsWith("#/entdecken") || hash.startsWith("#/auftrag") || /^#\/semester\/\d/.test(hash)) key = "entdecken";
+  else if (hash.startsWith("#/ablauf") || hash.startsWith("#/entdecken") || hash.startsWith("#/auftrag") || /^#\/semester\/\d/.test(hash)) key = "entdecken";
   else if (hash.startsWith("#/klasse") || hash === "#/" || hash === "" || hash.startsWith("#/semester")) key = "tagesprogramm";
   else key = ""; // Info / Lehrer / Edit – keine Hauptkachel aktiv
   document.body.classList.toggle("page-tagesprogramm", key === "tagesprogramm");
