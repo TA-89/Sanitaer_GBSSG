@@ -474,12 +474,170 @@ function schooldayBase(klasseId, dateISO) {
   return state.tagesprogramm?.klassen?.[klasseId]?.schultage?.[dateISO] || null;
 }
 
-// Unterrichtsinhalte für Klasse + Datum (lokale Bearbeitung hat Vorrang vor der Basis)
+// Unterrichtsinhalte für Klasse + Datum.
+// Priorität: lokale Lehrer-Bearbeitung > Excel-Master (pro KW) > alte Beispiel-JSON.
 function schooldayContent(klasseId, dateISO) {
   const ov = loadTpEdits()[tpEditKey(klasseId, dateISO)];
   if (ov) return ov;
+  const m = schooldayMaster(klasseId, dateISO);
+  if (m) return m;
   return schooldayBase(klasseId, dateISO);
 }
+// ===========================================================================
+// Master-Excel → Tagesprogramm (clientseitig, ohne Backend)
+// Die Excel-Masterpläne (web/data/master/<N>.Semester.xlsx) werden im Browser
+// mit SheetJS geparst. Je Schultag-Blatt (ST_n_KWxx) wird über die KALENDERWOCHE
+// dem berechneten Schultag zugeordnet (berücksichtigt automatisch die Ferien,
+// da der Master dieselben KW-Wochen auslässt). Die Quelle ist bewusst
+// austauschbar: heute fetch aus dem Repo, später vom Backend (gleicher Parser).
+// ===========================================================================
+const MASTER_CACHE_KEY = "sanigbs:master:v1";
+const MASTER_URL = (sem) => `data/master/${sem}.Semester.xlsx`;
+
+let _xlsxPromise = null;
+function loadSheetJs() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (_xlsxPromise) return _xlsxPromise;
+  _xlsxPromise = new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+    s.onload = () => window.XLSX ? res(window.XLSX) : rej(new Error("SheetJS unvollständig"));
+    s.onerror = () => rej(new Error("SheetJS konnte nicht geladen werden"));
+    document.head.appendChild(s);
+  });
+  return _xlsxPromise;
+}
+
+// ISO-8601-Kalenderwoche eines Datums
+function isoWeekNum(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return Math.ceil((((t - yearStart) / 86400000) + 1) / 7);
+}
+const cleanBullet = (s) => String(s || "").replace(/^[\s*•·\-–]+/, "").trim();
+
+// Ein ST_n-Blatt → Content-Objekt im Tagesprogramm-Format (1–3 / 4–5 bleibt erhalten)
+function parseStSheet(XLSX, ws) {
+  if (!ws || !ws["!ref"]) return null;
+  const range = XLSX.utils.decode_range(ws["!ref"]);
+  const cs = (r, c) => { const cell = ws[XLSX.utils.encode_cell({ r, c })]; return cell && cell.v != null ? String(cell.v).trim() : ""; };
+  const B = 1, C = 2, E = 4, F = 5, G = 6;
+  let r13 = -1, r45 = -1, rPause = -1, rHA = -1;
+  for (let r = range.s.r; r <= range.e.r; r++) {
+    const b = cs(r, B); if (!b) continue;
+    if (/^1\s*[-–]\s*3/.test(b)) r13 = r;
+    else if (/^4\s*[-–]\s*5/.test(b)) r45 = r;
+    else if (/^Pause$/i.test(b)) rPause = r;
+    else if (/Hausaufgaben/i.test(b)) rHA = r;
+  }
+  if (r13 < 0) return null;
+  const titleRow = (from, to) => {
+    for (let r = from; r < to; r++) {
+      const b = cs(r, B);
+      if (b && !/Unterrichtsverlauf/i.test(b) && !/^[14]\s*[-–]\s*[35]/.test(b)) return r;
+    }
+    return -1;
+  };
+  const tr1 = titleRow(range.s.r, r13);
+  const tr2 = titleRow(rPause >= 0 ? rPause + 1 : r13 + 1, r45 >= 0 ? r45 : range.e.r + 1);
+  const bulletsFrom = (start, stop) => {
+    const out = [];
+    for (let r = start; r <= stop; r++) {
+      const c = cs(r, C); if (!c) continue;
+      if (/^Lernziele$/i.test(c)) break;
+      // reine Zwischenüberschriften "Auftrag 1", "Auftrag 1/2/3" überspringen (keine echte Aktivität)
+      if (/^Auftrag\s*[\d.\/\s]+$/i.test(c)) continue;
+      const v = cleanBullet(c); if (v) out.push(v);
+    }
+    return out;
+  };
+  const b1Stop = (rPause >= 0 ? rPause : (r45 >= 0 ? r45 : range.e.r)) - 1;
+  const b2Stop = (rHA >= 0 ? rHA : range.e.r) - 1;
+  const bul1 = bulletsFrom(r13, b1Stop);
+  const bul2 = r45 >= 0 ? bulletsFrom(r45, b2Stop) : [];
+  const lektionen = [0, 1, 2, 3, 4].map(() => ({ thema: "", notizen: "" }));
+  const fill = (bullets, slots) => {
+    bullets.forEach((b, i) => {
+      if (i < slots.length - 1) lektionen[slots[i]].thema = b;
+      else {
+        const last = slots[slots.length - 1];
+        if (!lektionen[last].thema) lektionen[last].thema = b;
+        else lektionen[last].notizen = (lektionen[last].notizen ? lektionen[last].notizen + " · " : "") + b;
+      }
+    });
+  };
+  fill(bul1, [0, 1, 2]);
+  fill(bul2, [3, 4]);
+  let haNext = "";
+  if (rHA >= 0) {
+    for (let r = rHA; r <= range.e.r; r++) {
+      [E, F, G].forEach((col) => { const v = cs(r, col); if (v && !/Administratives/i.test(v)) haNext += (haNext ? " " : "") + v; });
+    }
+  }
+  return {
+    bloecke: [
+      { titel: tr1 >= 0 ? cs(tr1, B) : "", auftrag: tr1 >= 0 ? cs(tr1, G) : "" },
+      { titel: tr2 >= 0 ? cs(tr2, B) : "", auftrag: tr2 >= 0 ? cs(tr2, G) : "" },
+    ],
+    lektionen,
+    hausaufgabenFaellig: { text: "", fotos: [] },
+    hausaufgabenNaechste: { text: haNext, fotos: [] },
+  };
+}
+
+function parseMasterWorkbook(XLSX, wb) {
+  const byKw = {}, bySt = {};
+  wb.SheetNames.forEach((name) => {
+    const m = name.match(/^ST_(\d+)_KW(\d+)/i);
+    if (!m) return;
+    const content = parseStSheet(XLSX, wb.Sheets[name]);
+    if (!content) return;
+    bySt[Number(m[1])] = content;
+    byKw[Number(m[2])] = content;
+  });
+  return { byKw, bySt };
+}
+
+// Master eines Semesters laden (gecacht in localStorage). force=true → neu vom Server.
+async function ensureMaster(semester, force) {
+  semester = Number(semester);
+  if (!semester) return null;
+  if (!state.tpMaster) state.tpMaster = {};
+  if (!force && state.tpMaster[semester] !== undefined) return state.tpMaster[semester];
+  if (!force) {
+    try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); if (c[semester]) { state.tpMaster[semester] = c[semester]; return c[semester]; } } catch {}
+  }
+  try {
+    const res = await fetch(MASTER_URL(semester) + (force ? "?t=" + Date.now() : ""), { cache: force ? "reload" : "default" });
+    if (!res.ok) { state.tpMaster[semester] = null; return null; }
+    const buf = await res.arrayBuffer();
+    const XLSX = await loadSheetJs();
+    const parsed = parseMasterWorkbook(XLSX, XLSX.read(buf, { type: "array" }));
+    state.tpMaster[semester] = parsed;
+    try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); c[semester] = parsed; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
+    return parsed;
+  } catch (e) { console.warn("Master laden fehlgeschlagen:", e); state.tpMaster[semester] = null; return null; }
+}
+
+// Content aus dem Master für Klasse + Datum (über die Kalenderwoche zugeordnet)
+function schooldayMaster(klasseId, dateISO) {
+  const klasse = klasseById(klasseId);
+  if (!klasse || !state.tpMaster) return null;
+  const m = state.tpMaster[Number(klasse.semester)];
+  if (!m || !m.byKw) return null;
+  return m.byKw[isoWeekNum(parseISO(dateISO))] || null;
+}
+
+// "Aktualisieren": Cache leeren + Master neu laden
+async function masterRefresh(semester) {
+  semester = Number(semester);
+  try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); delete c[semester]; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
+  if (state.tpMaster) delete state.tpMaster[semester];
+  return ensureMaster(semester, true);
+}
+
 // Hat ein Schultag überhaupt gepflegte Inhalte?
 function schooldayHasContent(content) {
   if (!content) return false;
@@ -1071,6 +1229,7 @@ function renderEditorUI(v) {
           <h1>Tagesprogramm bearbeiten</h1>
         </div>
         <div class="editor2-actions">
+          <button class="btn btn-primary" id="ed-master-refresh" type="button" title="Inhalte aus dem Excel-Masterplan neu laden">↻ Aus Excel aktualisieren</button>
           <button class="btn btn-ghost" id="ed-export" type="button">JSON exportieren</button>
           <label class="btn btn-ghost">JSON importieren<input type="file" id="ed-import" accept=".json" hidden></label>
           <button class="btn btn-ghost" id="ed-logout" type="button">Abmelden</button>
@@ -1115,6 +1274,19 @@ function renderEditorUI(v) {
 
   const tagSelect = $("#ed-tag");
   $("#ed-semester-pdf").addEventListener("click", () => exportSemesterPdf($("#ed-klasse").value));
+
+  // Inhalte aus dem Excel-Masterplan neu laden (Cache leeren + neu parsen)
+  const masterBtn = $("#ed-master-refresh");
+  if (masterBtn) masterBtn.addEventListener("click", async () => {
+    const kl = klasseById($("#ed-klasse").value);
+    if (!kl) return;
+    const prev = masterBtn.textContent; masterBtn.disabled = true; masterBtn.textContent = "Lädt …";
+    const parsed = await masterRefresh(kl.semester);
+    masterBtn.disabled = false; masterBtn.textContent = prev;
+    const n = parsed && parsed.bySt ? Object.keys(parsed.bySt).length : 0;
+    if (n) { alert(`Masterplan ${kl.semester}. Semester neu geladen: ${n} Schultage übernommen.`); drawEditorForm($("#ed-klasse").value, tagSelect.value); }
+    else alert(`Kein Masterplan für das ${kl.semester}. Semester gefunden (Datei data/master/${kl.semester}.Semester.xlsx).`);
+  });
 
   // Teams-Link kopieren (pro Klasse) – mit Fallback für ältere Browser
   $$(".ed-tl-copy").forEach((btn) => {
@@ -1432,6 +1604,15 @@ async function route() {
   }
   initShell();
   const hash = location.hash || "#/";
+  // Für Tagesprogramm/Lehrer: Excel-Master der aktiven Klasse laden (gecacht), damit
+  // schooldayContent() die Inhalte synchron beim Rendern findet.
+  try {
+    if (hash === "#/" || hash === "" || hash.startsWith("#/klasse") || hash.startsWith("#/semester") || hash.startsWith("#/lehrer")) {
+      const mk = hash.match(/^#\/klasse\/([^\/]+)/);
+      const klasse = klasseById(mk ? decodeURIComponent(mk[1]) : getActiveKlasseId());
+      if (klasse) await ensureMaster(klasse.semester);
+    }
+  } catch {}
   for (const r of routes) {
     const m = hash.match(r.match);
     if (m) {
