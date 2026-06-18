@@ -254,6 +254,9 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 .sidebar-label { color: rgba(255, 255, 255, 0.55); }
 .sidebar .select-wrap select { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); color: #fff; }
 .sidebar .select-wrap select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(199, 211, 0, 0.28); }
+/* Aufgeklappte Optionsliste: eigener heller Hintergrund + dunkle Schrift (sonst weiss auf weiss) */
+.sidebar .select-wrap select option { background: #fff; color: var(--ink); }
+.sidebar .select-wrap select optgroup { background: #fff; color: var(--ink); }
 .sidebar .select-chev { color: rgba(255, 255, 255, 0.6); }
 .sidenav a { color: rgba(255, 255, 255, 0.78); }
 .sidenav a svg { color: rgba(255, 255, 255, 0.5); }
