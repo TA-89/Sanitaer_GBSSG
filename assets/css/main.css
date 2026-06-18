@@ -339,18 +339,20 @@ body.is-embed.page-tagesprogramm .view { margin-top: 0 !important; }
     width: auto; max-width: none;
     margin: 0; padding: 0 var(--space-6) var(--space-7);
   }
-  /* Schwarze Kopfleiste der Unterseiten – bricht bis an die Ränder aus, eckig, oben/links angeschlossen */
-  .home-hero, .la-head, .section-head {
+  /* Schwarze Kopfleiste der Unterseiten – voll an Sidebar/oben angeschlossen, eckig.
+     Per left/width (nicht margin) → greift zuverlässig (margin wird sonst überschrieben). */
+  body .home-hero, body .la-head, body .section-head {
     position: relative; overflow: hidden;
     background: var(--ink); color: #fff;
-    margin: 0 calc(-1 * var(--space-6)) var(--space-5);
+    margin: 0 0 var(--space-5);
+    left: calc(-1 * var(--space-6)); width: calc(100% + 2 * var(--space-6));
     padding: var(--space-5) var(--space-6);
     border-radius: 0; max-width: none;
   }
-  /* Grünes Quadrat als Akzent hinter dem Titelanfang (gbssg.ch-Stil) */
-  .home-hero::before, .la-head::before, .section-head::before {
+  /* Grünes Quadrat: linke Hälfte vor dem Titel, rechte Hälfte läuft in die ersten Buchstaben */
+  body .home-hero::before, body .la-head::before, body .section-head::before {
     content: ""; position: absolute; z-index: 0;
-    left: calc(var(--space-6) - 12px); top: calc(var(--space-5) - 12px);
+    left: calc(var(--space-6) - 28px); top: calc(var(--space-5) - 10px);
     width: 56px; height: 56px; background: var(--brand);
   }
   .home-hero > *, .la-head > *, .section-head > * { position: relative; z-index: 1; }
@@ -359,11 +361,19 @@ body.is-embed.page-tagesprogramm .view { margin-top: 0 !important; }
     font-size: clamp(2.1rem, 2.2vw + 1.1rem, 3rem);
   }
   .section-head p { color: rgba(255, 255, 255, 0.72); }   /* nur noch Semester-Detailseite */
-  /* Tagesprogramm: grüner Kopf voll an Sidebar/oben anschliessen (ganze Kachel randlos) */
+  /* Tagesprogramm: Kachel voll an Sidebar/oben angeschlossen (per left/width) */
   body.page-tagesprogramm .tp-daycard {
-    margin: 0 calc(-1 * var(--space-6)) var(--space-5);
+    position: relative;
+    left: calc(-1 * var(--space-6)); width: calc(100% + 2 * var(--space-6));
+    margin: 0 0 var(--space-5);
+    background: var(--brand);   /* hellgrüner Rahmen rundherum */
     border: none; border-radius: 0; box-shadow: none;
   }
+}
+/* Lime-Rahmen um den Schultag: Kopf oben, schmal links/rechts, Bar unten; Inhalt weiss eingerückt */
+body.page-tagesprogramm .tp-dc-body {
+  background: var(--paper);
+  margin: 0 8px var(--space-4);
 }
 
 @media (max-width: 860px) {
@@ -855,7 +865,7 @@ body.is-embed.page-tagesprogramm .view { margin-top: 0 !important; }
 .pill-lz {
   background: var(--bg-warm);
   color: var(--ink-quiet);
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 0.72rem;
 }
 .pill-thema { background: var(--bg-warm); color: var(--ink-soft); }

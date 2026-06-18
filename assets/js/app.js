@@ -2558,14 +2558,17 @@ function renderKompetenzen() {
     <div class="hf-list" id="hf-list"></div>
   `));
 
-  // --- Plakat rendern
+  // --- Plakat rendern (mit Sicherheitsnetz: hängt das Rendern, Overlay trotzdem ausblenden)
   const frame = $("#plakat-frame");
+  let plakatDone = false;
+  const hidePlakatLoading = () => { const l = $("#plakat-loading"); if (l) l.hidden = true; };
   renderPlakatCanvas(frame).then(() => {
-    $("#plakat-loading").hidden = true;
-    drawPlakatHotspots(false);
+    plakatDone = true; hidePlakatLoading(); drawPlakatHotspots(false);
   }).catch(() => {
+    plakatDone = true;
     $("#plakat-loading").innerHTML = `Plakat konnte nicht geladen werden. Stelle sicher, dass <code>pdfs/plakat.pdf</code> vorhanden ist (1-PDFs-einbinden.cmd).`;
   });
+  setTimeout(() => { if (!plakatDone) { hidePlakatLoading(); drawPlakatHotspots(false); } }, 7000);
 
   // --- HF-Akkordeon
   drawHfAccordion(openSet);
