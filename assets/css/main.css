@@ -216,12 +216,12 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 .select-wrap select:focus { border-color: var(--brand-dark); box-shadow: 0 0 0 3px var(--brand-light); }
 .select-chev { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-quiet); pointer-events: none; }
 
-.sidenav { display: flex; flex-direction: column; gap: 2px; margin-top: var(--space-2); }
+.sidenav { display: flex; flex-direction: column; gap: 4px; margin-top: var(--space-3); }
 .sidenav a {
   display: flex; align-items: center; gap: var(--space-3);
-  padding: 10px var(--space-3);
+  padding: 12px var(--space-3);
   border-radius: var(--radius);
-  color: var(--ink-soft); font-weight: 500; font-size: 0.94rem;
+  color: var(--ink-soft); font-weight: 600; font-size: 1.06rem;
   letter-spacing: -0.01em;
   transition: color .15s, background .15s;
 }
@@ -258,12 +258,14 @@ body.sidebar-collapsed .sidebar-toggle { transform: rotate(180deg); }
 .sidebar .select-wrap select option { background: #fff; color: var(--ink); }
 .sidebar .select-wrap select optgroup { background: #fff; color: var(--ink); }
 .sidebar .select-chev { color: rgba(255, 255, 255, 0.6); }
-.sidenav a { color: rgba(255, 255, 255, 0.78); }
-.sidenav a svg { color: rgba(255, 255, 255, 0.5); }
-.sidenav a:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
-.sidenav a:hover svg { color: rgba(255, 255, 255, 0.8); }
+.sidenav a { color: #fff; }
+.sidenav a svg { color: rgba(255, 255, 255, 0.6); }
+.sidenav a:hover { background: transparent; color: var(--brand); }
+.sidenav a:hover svg { color: var(--brand); }
 .sidenav a.is-active { background: var(--brand); color: var(--ink); box-shadow: none; font-weight: 700; }
 .sidenav a.is-active svg { color: var(--ink); }
+.sidenav a.is-active:hover { color: var(--ink); }
+.sidenav a.is-active:hover svg { color: var(--ink); }
 .sidebar-foot { border-top-color: rgba(255, 255, 255, 0.12); }
 .sidebar-sublink { color: rgba(255, 255, 255, 0.6); }
 .sidebar-sublink:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
