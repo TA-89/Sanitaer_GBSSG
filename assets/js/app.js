@@ -818,10 +818,11 @@ function buildLektionenHtml(content, halbtag) {
     const farbe = blk.auftrag ? auftragFarbe(blk.auftrag) : null;
     const style = farbe ? ` style="--blk:${farbe}; --blk-bg:${hexToRgba(farbe, 0.055)}; --blk-bd:${hexToRgba(farbe, 0.28)}"` : "";
     const a = blk.auftrag ? aufById(blk.auftrag) : null;
-    const aufHtml = blk.auftrag
+    const aufBox = blk.auftrag
       ? (a ? `<a class="blk-auf" href="${escapeHtml(auftragLiveUrl(a))}" target="_blank" rel="noopener" title="${escapeHtml(a.titel)} – PDF öffnen">${escapeHtml(a.auftragNummer)}</a>`
            : `<span class="blk-auf">${escapeHtml(blk.auftrag)}</span>`)
       : "";
+    const aufHtml = aufBox ? `<span class="blk-auf-wrap"><span class="blk-auf-label">Lernauftrag</span>${aufBox}</span>` : "";
     const head = `<div class="lektion-block-head">
       <div class="blk-titel-wrap">
         <span class="lektion-group-label">${label}</span>
@@ -1943,10 +1944,8 @@ function renderHome() {
 
   v.appendChild(el(`
     <section class="home">
-      <header class="home-hero">
-        <h1>Ablauf der Lehre</h1>
-        <p class="home-sub">Acht Semester, ${total} Lernaufträge. Klick auf ein Semester, um den Lernpfad mit Aufträgen und den Prüfungen (mit Lernzielen) zu öffnen.</p>
-      </header>
+      <header class="home-hero"><h1>Ablauf der Lehre</h1></header>
+      <p class="page-lead">Acht Semester, ${total} Lernaufträge. Klick auf ein Semester, um den Lernpfad mit Aufträgen und den Prüfungen (mit Lernzielen) zu öffnen.</p>
 
       <div class="home-pathhead">
         <h2>Der Weg durch deine Lehre</h2>
@@ -2278,10 +2277,8 @@ function renderAuftrag({ id }) {
 function renderSearch({ q }) {
   const v = $("#view");
   v.appendChild(el(`
-    <header class="la-head">
-      <h1>Lernaufträge BKU</h1>
-      <p class="la-sub">Finde jeden der ${state.data.aufträge.length} Lernaufträge nach <strong>Thema</strong>, <strong>Begriff</strong> oder <strong>Nummer</strong> – z.&nbsp;B. «Solar», «Z-Mass» oder «1.4». Tippen genügt, Treffer erscheinen sofort.</p>
-    </header>
+    <header class="la-head"><h1>Lernaufträge BKU</h1></header>
+    <p class="page-lead">Finde jeden der ${state.data.aufträge.length} Lernaufträge nach <strong>Thema</strong>, <strong>Begriff</strong> oder <strong>Nummer</strong> – z.&nbsp;B. «Solar», «Z-Mass» oder «1.4». Tippen genügt, Treffer erscheinen sofort.</p>
 
     <form class="la-search" id="search-form" role="search">
       <div class="la-search-box">
@@ -2529,12 +2526,8 @@ function renderKompetenzen() {
   const allOpen = openSet.size >= state.hf.handlungsfelder.length;
 
   v.appendChild(el(`
-    <header class="section-head">
-      <div>
-        <h1>Handlungskompetenzen</h1>
-        <p>Klick auf ein Kästchen im Plakat zeigt die passenden Lernaufträge. Quelle: suissetec Bildungsplan.</p>
-      </div>
-    </header>
+    <header class="section-head"><h1>Handlungskompetenzen</h1></header>
+    <p class="page-lead">Klick auf ein Kästchen im Plakat zeigt die passenden Lernaufträge. Quelle: suissetec Bildungsplan.</p>
 
     <section class="plakat-section">
       <div class="plakat-toolbar">
