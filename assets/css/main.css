@@ -2581,20 +2581,16 @@ body.has-overlay { overflow: hidden; }
 }
 .tp-pruef-lz:hover { border-color: var(--ink-soft); text-decoration: none; }
 
-/* Prüfungs-Hinweis in der Hausaufgaben-Box: grosses Ziel-Icon, verlinkt auf Lernziele */
-.ha-pruef-cta {
-  display: flex; align-items: center; gap: var(--space-3);
-  margin-top: var(--space-2);
-  background: var(--paper); border: 1px solid var(--border);
-  border-left: 4px solid var(--brand);
-  border-radius: var(--radius); padding: var(--space-2) var(--space-3);
-  text-decoration: none; color: var(--ink);
+/* Prüfungs-Hinweis in der Hausaufgaben-Box: schlicht "Prüfung am <Datum>" fett
+   + verlinktes Ziel-Icon, kein eigener Balken */
+.ha-pruef {
+  display: flex; align-items: center; gap: 8px;
+  margin: var(--space-2) 0 0; font-size: 0.95rem; color: var(--ink);
 }
-a.ha-pruef-cta:hover { border-color: var(--ink-soft); border-left-color: var(--brand); }
-.ha-pruef-ico { flex-shrink: 0; display: inline-flex; color: var(--ink); }
-.ha-pruef-ico .lz-icon { width: 30px; height: 30px; }
-.ha-pruef-txt { display: flex; flex-direction: column; line-height: 1.3; font-size: 0.88rem; color: var(--ink-soft); }
-.ha-pruef-txt strong { color: var(--ink); font-size: 0.96rem; }
+.ha-pruef strong { font-weight: 700; }
+.ha-pruef .lz-icon-link { display: inline-flex; color: var(--ink); line-height: 0; }
+.ha-pruef .lz-icon-link:hover { color: var(--brand); }
+.ha-pruef .lz-icon { width: 22px; height: 22px; }
 
 /* Editor: Prüfungs-Feld */
 .ed-pruef-row { display: grid; grid-template-columns: 1fr 110px; gap: 8px; }

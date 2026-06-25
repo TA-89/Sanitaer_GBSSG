@@ -795,23 +795,24 @@ function buildPruefungHeuteHtml(content) {
   if (!p) return "";
   return `<div class="tp-pruef-top">${icoZiel}<span><strong>${escapeHtml(p.titel)}</strong></span>${_lzLink(p.auftrag)}</div>`;
 }
-// Grosses Ziel-Icon zum Anklicken (Lernziele der Prüfung) – z. B. in der Hausaufgaben-Box,
-// wenn dort eine Prüfung angesagt wird ("… Prüfung 1.5 …").
-function buildHwPruefCta(text) {
+// Datum kurz mit Wochentag (z. B. "Di 25.08.2026")
+function pruefDatumStr(iso) {
+  if (!iso) return "";
+  const d = parseISO(iso);
+  return `${weekdayKurz(isoWeekday(d))} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+}
+// Prüfungs-Hinweis in der Hausaufgaben-Box (wenn dort eine Prüfung angesagt wird):
+// schlicht "Prüfung am <Datum>" fett + verlinktes Ziel-Icon – kein eigener Balken.
+function buildHwPruefCta(text, dateISO) {
   if (!text || !/prüfung/i.test(text)) return "";
   const nr = pruefAuftragNr(text);
   const pdf = nr ? lernzielePdf(nr) : null;
-  const label = nr ? `Lernziele zur Prüfung ${escapeHtml(nr)}` : "Lernziele zur Prüfung";
-  if (pdf) {
-    return `<a class="ha-pruef-cta" href="${escapeHtml(pdf)}" target="_blank" rel="noopener" title="Lernziele zur Prüfung öffnen">
-      <span class="ha-pruef-ico">${icoZiel}</span>
-      <span class="ha-pruef-txt"><strong>Prüfung</strong><span>${label} ↗</span></span>
-    </a>`;
-  }
-  return `<div class="ha-pruef-cta is-static">
-    <span class="ha-pruef-ico">${icoZiel}</span>
-    <span class="ha-pruef-txt"><strong>Prüfung</strong><span>${label}</span></span>
-  </div>`;
+  const datum = pruefDatumStr(dateISO);
+  const label = datum ? `Prüfung am ${datum}` : "Prüfung";
+  const ico = pdf
+    ? `<a class="lz-icon-link" href="${escapeHtml(pdf)}" target="_blank" rel="noopener" title="Lernziele zur Prüfung ${escapeHtml(nr)} öffnen">${icoZiel}</a>`
+    : icoZiel;
+  return `<p class="ha-pruef"><strong>${label}</strong>${ico}</p>`;
 }
 // In den 2 Wochen davor: Hinweis unten (bei den Hausaufgaben) mit Icon, Titel, Datum, Lernziele
 function buildPruefungVorabHtml(klasseId, days, idx) {
@@ -903,7 +904,7 @@ const icoHwDue = `<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="t
 const icoHwNext = `<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // Hausaufgaben-Box (fällig auf diesen Schultag / auf nächste Woche)
-function buildHausaufgabenHtml(hw, kind) {
+function buildHausaufgabenHtml(hw, kind, pruefDateISO) {
   if (!hw) return "";
   const text = (hw.text || "").trim();
   const fotos = (hw.fotos || []).filter(Boolean);
@@ -916,7 +917,7 @@ function buildHausaufgabenHtml(hw, kind) {
   return `<div class="ha-box ha-${kind}">
     <div class="ha-head">${isNext ? icoHwNext : icoHwDue}<span>${label}</span></div>
     ${text ? `<p class="ha-text">${escapeHtml(text)}</p>` : ""}
-    ${buildHwPruefCta(text)}
+    ${buildHwPruefCta(text, pruefDateISO)}
     ${fotoHtml}
   </div>`;
 }
@@ -1088,14 +1089,14 @@ function renderTagesprogramm(params) {
       </div>`;
       body += buildExtrasHtml(content) + fotoHtml;
     } else {
-      body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig");
+      body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig", days[idx]);
       body += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
       if (!hasContent) {
         body += `<div class="tp-empty tp-empty-inline"><svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><h3>Dieser Schultag ist noch nicht geplant</h3></div>`;
       } else {
         body += buildExtrasHtml(content);
       }
-      body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste");
+      body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste", days[idx + 1]);
       body += buildPruefungVorabHtml(klasseId, days, idx);
     }
     dayHost.innerHTML = `<article class="tp-daycard">${head}<div class="tp-dc-body">${body}</div></article>`;
