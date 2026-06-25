@@ -745,6 +745,25 @@ function schooldayHasPruefung(content) {
 function schooldayPruefung(content) {
   return (content && content.pruefung && content.pruefung.titel) ? content.pruefung : null;
 }
+// Auftrags-Nr aus einem Prüfungstext ziehen (z. B. "Prüfung 1.5 – Leitungen" → "1.5")
+function pruefAuftragNr(text) {
+  const m = String(text || "").match(/(\d+\.\d+)/);
+  return m ? m[1] : "";
+}
+// Prüfung eines Schultags erkennen: strukturiert (Editor) ODER aus dem Unterrichtstext
+// (Lektions-Themen / Block-Titel). Liefert { titel, auftrag } oder null.
+function detectSchooldayPruefung(content) {
+  const sp = schooldayPruefung(content);
+  if (sp) return { titel: sp.titel, auftrag: sp.auftrag || pruefAuftragNr(sp.titel) };
+  if (!content) return null;
+  const cand = [];
+  (content.bloecke || []).forEach((b) => { if (b && b.titel) cand.push({ t: b.titel, a: b.auftrag }); });
+  (content.lektionen || []).forEach((l) => { if (l && l.thema) cand.push({ t: l.thema, a: "" }); });
+  for (const c of cand) {
+    if (isPruefungPhrase(c.t)) return { titel: c.t.trim(), auftrag: c.a || pruefAuftragNr(c.t) };
+  }
+  return null;
+}
 // Lernziele-PDF (Prüfungsvorbereitung): Live-Link von sanitaerlernen.ch (Pfad aus Manifest)
 function lernzielePdf(auftragNr) {
   const lz = state.lernziele;
@@ -770,11 +789,29 @@ function _lzLink(auftrag) {
   const pdf = auftrag ? lernzielePdf(auftrag) : null;
   return pdf ? `<a class="tp-pruef-lz" href="${escapeHtml(pdf)}" target="_blank" rel="noopener">Lernziele ↗</a>` : "";
 }
-// Am Prüfungstag: dezenter Hinweis ganz oben
+// Am Prüfungstag: Hinweis ganz oben – erkennt die Prüfung auch aus dem Unterrichtstext
 function buildPruefungHeuteHtml(content) {
-  const p = schooldayPruefung(content);
+  const p = detectSchooldayPruefung(content);
   if (!p) return "";
   return `<div class="tp-pruef-top">${icoZiel}<span><strong>${escapeHtml(p.titel)}</strong></span>${_lzLink(p.auftrag)}</div>`;
+}
+// Grosses Ziel-Icon zum Anklicken (Lernziele der Prüfung) – z. B. in der Hausaufgaben-Box,
+// wenn dort eine Prüfung angesagt wird ("… Prüfung 1.5 …").
+function buildHwPruefCta(text) {
+  if (!text || !/prüfung/i.test(text)) return "";
+  const nr = pruefAuftragNr(text);
+  const pdf = nr ? lernzielePdf(nr) : null;
+  const label = nr ? `Lernziele zur Prüfung ${escapeHtml(nr)}` : "Lernziele zur Prüfung";
+  if (pdf) {
+    return `<a class="ha-pruef-cta" href="${escapeHtml(pdf)}" target="_blank" rel="noopener" title="Lernziele zur Prüfung öffnen">
+      <span class="ha-pruef-ico">${icoZiel}</span>
+      <span class="ha-pruef-txt"><strong>Prüfung</strong><span>${label} ↗</span></span>
+    </a>`;
+  }
+  return `<div class="ha-pruef-cta is-static">
+    <span class="ha-pruef-ico">${icoZiel}</span>
+    <span class="ha-pruef-txt"><strong>Prüfung</strong><span>${label}</span></span>
+  </div>`;
 }
 // In den 2 Wochen davor: Hinweis unten (bei den Hausaufgaben) mit Icon, Titel, Datum, Lernziele
 function buildPruefungVorabHtml(klasseId, days, idx) {
@@ -879,6 +916,7 @@ function buildHausaufgabenHtml(hw, kind) {
   return `<div class="ha-box ha-${kind}">
     <div class="ha-head">${isNext ? icoHwNext : icoHwDue}<span>${label}</span></div>
     ${text ? `<p class="ha-text">${escapeHtml(text)}</p>` : ""}
+    ${buildHwPruefCta(text)}
     ${fotoHtml}
   </div>`;
 }
