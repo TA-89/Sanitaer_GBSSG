@@ -3027,6 +3027,11 @@ body.is-embed .lz-btn-inline { margin-top: 7px; }
 .ed-lekt-zeit { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; color: var(--ink-soft); }
 .ed-lekt-nr { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-quiet); }
 .ed-lekt .ed-input { background: var(--paper); }
+/* Prüfungs-Häkchen + Nr pro Lektion */
+.ed-lekt-pruef { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ed-pruef-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); white-space: nowrap; cursor: pointer; }
+.ed-pruef-check input { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
+.ed-lekt-pruef .ed-input:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .ed-links { display: flex; flex-direction: column; gap: var(--space-2); }
 .ed-link-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: var(--space-2); align-items: center; }

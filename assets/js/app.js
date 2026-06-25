@@ -733,15 +733,11 @@ function schooldayAuftraege(content) {
 function isPruefungPhrase(s) {
   return /Prüfung/i.test(s) && !/(üben|vorbereit|repetition|lernen)/i.test(s);
 }
+// Findet an diesem Schultag eine Prüfung statt?
 function schooldayHasPruefung(content) {
-  if (!content) return false;
-  if (schooldayPruefung(content)) return true;
-  const parts = [];
-  (content.lektionen || []).forEach((l) => { if (l && l.thema) parts.push(l.thema); });
-  (content.bloecke || []).forEach((b) => { if (b && b.titel) parts.push(b.titel); });
-  return parts.some(isPruefungPhrase);
+  return !!detectSchooldayPruefung(content);
 }
-// Strukturierte Prüfung eines Schultags (vom Editor gesetzt): { titel, auftrag }
+// Strukturierte Prüfung eines Schultags (alt, vom früheren Editor-Feld): { titel, auftrag }
 function schooldayPruefung(content) {
   return (content && content.pruefung && content.pruefung.titel) ? content.pruefung : null;
 }
@@ -750,15 +746,28 @@ function pruefAuftragNr(text) {
   const m = String(text || "").match(/(\d+\.\d+)/);
   return m ? m[1] : "";
 }
-// Prüfung eines Schultags erkennen: strukturiert (Editor) ODER aus dem Unterrichtstext
-// (Lektions-Themen / Block-Titel). Liefert { titel, auftrag } oder null.
+// Prüfung eines Schultags erkennen. Quelle der Wahrheit:
+//  1) explizites Häkchen pro Lektion (Editor) – wenn der Tag bearbeitet wurde
+//  2) altes strukturiertes Feld content.pruefung (Rückwärtskompatibilität)
+//  3) Text-Auto-Erkennung aus Lektions-Themen/Block-Titeln (für unbearbeitete Master-Tage)
+// Liefert { titel, auftrag } oder null.
 function detectSchooldayPruefung(content) {
+  if (!content) return null;
+  const lekt = content.lektionen || [];
+  // 1) Wurde der Tag explizit bearbeitet (mind. eine Lektion hat ein gesetztes Häkchen-Feld)?
+  const hasExplicit = lekt.some((l) => l && typeof l.pruef === "boolean");
+  if (hasExplicit) {
+    const lp = lekt.find((l) => l && l.pruef);
+    if (!lp) return null;
+    return { titel: (lp.thema && lp.thema.trim()) || "Prüfung", auftrag: lp.pruefNr || pruefAuftragNr(lp.thema || "") };
+  }
+  // 2) Altes strukturiertes Feld
   const sp = schooldayPruefung(content);
   if (sp) return { titel: sp.titel, auftrag: sp.auftrag || pruefAuftragNr(sp.titel) };
-  if (!content) return null;
+  // 3) Text-Fallback (Master ohne explizite Markierung)
   const cand = [];
   (content.bloecke || []).forEach((b) => { if (b && b.titel) cand.push({ t: b.titel, a: b.auftrag }); });
-  (content.lektionen || []).forEach((l) => { if (l && l.thema) cand.push({ t: l.thema, a: "" }); });
+  lekt.forEach((l) => { if (l && l.thema) cand.push({ t: l.thema, a: "" }); });
   for (const c of cand) {
     if (isPruefungPhrase(c.t)) return { titel: c.t.trim(), auftrag: c.a || pruefAuftragNr(c.t) };
   }
@@ -778,7 +787,7 @@ function naechstePruefung(klasseId, days, fromIdx, tage) {
   for (let j = fromIdx + 1; j < days.length; j++) {
     const diff = Math.round((parseISO(days[j]) - from) / 86400000);
     if (diff > tage) break;
-    const p = schooldayPruefung(schooldayContent(klasseId, days[j]));
+    const p = detectSchooldayPruefung(schooldayContent(klasseId, days[j]));
     if (p) return { datum: days[j], pruefung: p };
   }
   return null;
@@ -1516,10 +1525,19 @@ function drawEditorForm(klasseId, dateISO) {
 
   const lektField = (i) => {
     const l = c.lektionen[i] || {};
+    // Häkchen: explizit gesetzt → übernehmen; sonst aus dem (Master-)Thema automatisch erkennen
+    const hasExplicit = typeof l.pruef === "boolean";
+    const autoP = isPruefungPhrase(l.thema || "");
+    const checked = hasExplicit ? l.pruef : autoP;
+    const nr = l.pruefNr || (checked ? pruefAuftragNr(l.thema || "") : "");
     return `<div class="ed-lekt">
       <div class="ed-lekt-head"><span class="ed-lekt-zeit">${zeiten[i]}</span><span class="ed-lekt-nr">Lektion ${i + 1}</span></div>
       <input class="ed-input" id="lk-thema-${i}" type="text" placeholder="Thema" value="${escapeHtml(l.thema || "")}">
       <textarea class="ed-input" id="lk-notiz-${i}" rows="2" placeholder="Notizen">${escapeHtml(l.notizen || "")}</textarea>
+      <div class="ed-lekt-pruef">
+        <label class="ed-pruef-check"><input type="checkbox" id="lk-pruef-${i}" ${checked ? "checked" : ""}> Prüfung</label>
+        <input class="ed-input ed-blk-auf" id="lk-pruefnr-${i}" type="text" placeholder="Prüfungs-Nr (z. B. 1.5)" value="${escapeHtml(nr)}" ${checked ? "" : "disabled"}>
+      </div>
     </div>`;
   };
   const blockGroup = (k, range, label) => {
@@ -1582,14 +1600,6 @@ function drawEditorForm(klasseId, dateISO) {
         </div>
       </div>
 
-      <div class="ed-block ed-pruef-edit">
-        <label class="ed-label">Prüfung an diesem Schultag (optional)</label>
-        <div class="ed-pruef-row">
-          <input class="ed-input" id="ed-pruef-titel" type="text" placeholder="z. B. Prüfung 1.5 – Leitungsmaterialien" value="${escapeHtml(c.pruefung.titel || "")}">
-          <input class="ed-input ed-blk-auf" id="ed-pruef-auf" type="text" placeholder="Auftrag-Nr" value="${escapeHtml(c.pruefung.auftrag || "")}">
-        </div>
-        <p class="ed-hint">Markiert den Tag als Prüfungstag (Kachel orange, „Prüfung" rot). Über die Auftrags-Nr werden die Lernziele automatisch verlinkt und 2 Wochen vorher als Hinweis mit Datum angezeigt.</p>
-      </div>
       </div><!-- /ed-normal-fields -->
 
       <div class="ed-bar">
@@ -1660,6 +1670,19 @@ function drawEditorForm(klasseId, dateISO) {
   host.querySelectorAll("button[data-qr]").forEach((btn) => {
     btn.addEventListener("click", () => openQrOverlay(klasseId, dateISO));
   });
+  // Prüfungs-Häkchen pro Lektion: Nr-Feld nur aktiv, wenn angehakt
+  for (let i = 0; i < 5; i++) {
+    const chk = host.querySelector(`#lk-pruef-${i}`);
+    const nrEl = host.querySelector(`#lk-pruefnr-${i}`);
+    if (!chk || !nrEl) continue;
+    chk.addEventListener("change", () => {
+      nrEl.disabled = !chk.checked;
+      if (chk.checked) {
+        if (!nrEl.value.trim()) nrEl.value = pruefAuftragNr(val(`#lk-thema-${i}`));
+        nrEl.focus();
+      }
+    });
+  }
 
   // Speichern
   const val = (sel) => { const e = host.querySelector(sel); return e ? e.value.trim() : ""; };
@@ -1680,7 +1703,10 @@ function drawEditorForm(klasseId, dateISO) {
       return;
     }
     const lekt = [];
-    for (let i = 0; i < 5; i++) lekt.push({ thema: val(`#lk-thema-${i}`), material: [], notizen: val(`#lk-notiz-${i}`) });
+    for (let i = 0; i < 5; i++) {
+      const pruef = !!(host.querySelector(`#lk-pruef-${i}`) || {}).checked;
+      lekt.push({ thema: val(`#lk-thema-${i}`), material: [], notizen: val(`#lk-notiz-${i}`), pruef, pruefNr: pruef ? val(`#lk-pruefnr-${i}`) : "" });
+    }
     const bloecke = [0, 1].map((k) => ({ titel: val(`#ed-blk${k}-titel`), auftrag: val(`#ed-blk${k}-auf`) }));
     // Links aus den Zeilen sammeln: Beschriftung + URL, .pdf wird als PDF erkannt
     const links = [], pdfs = [];
@@ -1698,14 +1724,12 @@ function drawEditorForm(klasseId, dateISO) {
       hausaufgabenFaellig: { text: val("#ed-ha-f"), fotos: photos.faellig },
       hausaufgabenNaechste: { text: val("#ed-ha-n"), fotos: photos.naechste },
     };
-    const pTitel = val("#ed-pruef-titel");
-    if (pTitel) content.pruefung = { titel: pTitel, auftrag: val("#ed-pruef-auf") };
     // Komplett leer (z. B. Ausfall-Häkchen entfernt, ohne eigenen Inhalt) → Overlay löschen,
     // damit wieder der Masterplan greift (statt eines leeren „noch offen"-Tags).
     const isEmpty = !bloecke.some((b) => b.titel || b.auftrag)
-      && !lekt.some((l) => (l.thema || "").trim() || (l.notizen || "").trim())
+      && !lekt.some((l) => (l.thema || "").trim() || (l.notizen || "").trim() || l.pruef)
       && !links.length && !pdfs.length
-      && !val("#ed-ha-f") && !val("#ed-ha-n") && !pTitel;
+      && !val("#ed-ha-f") && !val("#ed-ha-n");
     if (isEmpty) delete edits[tpEditKey(klasseId, dateISO)];
     else edits[tpEditKey(klasseId, dateISO)] = content;
     if (saveTpEdits(edits)) {
