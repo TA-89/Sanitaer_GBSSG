@@ -491,7 +491,7 @@ function schooldayContent(klasseId, dateISO) {
 // da der Master dieselben KW-Wochen auslässt). Die Quelle ist bewusst
 // austauschbar: heute fetch aus dem Repo, später vom Backend (gleicher Parser).
 // ===========================================================================
-const MASTER_CACHE_KEY = "sanigbs:master:v3";   // keyed by Dateiname (vN bei Parser-Änderungen erhöhen!)
+const MASTER_CACHE_KEY = "sanigbs:master:v5";   // keyed by Dateiname (vN bei Parser-Änderungen erhöhen!)
 const MASTER_URL = (file) => `data/master/${encodeURIComponent(file)}`;
 // Master-Datei einer Klasse: explizit aus klassen.json, sonst Fallback <semester>.Semester.xlsx
 const klasseMasterFile = (klasse) => klasse ? (klasse.master || `${klasse.semester}.Semester.xlsx`) : null;
@@ -574,49 +574,44 @@ function parseRichSheet(XLSX, ws, range, cs) {
   };
 }
 
-// „compact"-Layout (1.Semester, 3/5/7, EBA): Titel in B, Auftrag in G/F, Inhalt in C.
+// „compact"-Layout (alle aktuellen Master): Block-Titel in B, Auftrag in G/F,
+// Inhalt (Stichpunkte) in C. ANKER = die Range-Labels „N - M Lektion" in Spalte B.
+// Dadurch werden variable Aufteilungen (z. B. 1-2 / 3-5) automatisch erkannt.
+// Jeder Block trägt seinen Lektionsbereich (von/bis) + die Roh-Stichpunkte (inhalt).
 function parseCompactSheet(XLSX, ws, range, cs) {
-  const B = 1, C = 2, E = 4, F = 5, G = 6;
-  // Strukturzeilen (kein Thema): Lektions-Labels (1-3 Lektion / 1.Lektion / 2+3.Lektion / 4-5 Lektion), Pause, Kopf, Hausaufgaben
-  const isLabel = (b) => /Lektion/i.test(b) || /^Pause$/i.test(b) || /Unterrichtsverlauf/i.test(b) || /Hausaufgaben/i.test(b) || /Administratives/i.test(b);
-  let rPause = -1, rHA = -1;
+  const B = 1, C = 2;
+  const rangeRe = /(\d)\s*[-–]\s*(\d)\s*Lektion/i;
+  const isLabelB = (b) => rangeRe.test(b) || /^Pause$/i.test(b) || /Unterrichtsverlauf/i.test(b) || /Hausaufgaben/i.test(b) || /Administratives/i.test(b);
+  // Block-Anker (Range-Labels) + Hausaufgaben-Zeile finden
+  const anchors = []; let rHA = -1;
   for (let r = range.s.r; r <= range.e.r; r++) {
     const b = cs(r, B); if (!b) continue;
-    if (/^Pause$/i.test(b) && rPause < 0) rPause = r;
+    const m = b.match(rangeRe);
+    if (m) anchors.push({ r, von: Number(m[1]), bis: Number(m[2]) });
     else if (/Hausaufgaben/i.test(b) && rHA < 0) rHA = r;
   }
-  // Vormittag = bis Pause (LE 1–3), Nachmittag = Pause..Hausaufgaben (LE 4–5)
-  const morningEnd = rPause >= 0 ? rPause : (rHA >= 0 ? rHA : range.e.r + 1);
-  const afternoonStart = rPause >= 0 ? rPause + 1 : morningEnd;
-  const afternoonEnd = rHA >= 0 ? rHA : range.e.r + 1;
-  // Auftrags-Nr (Muster N.M) irgendwo in der Titelzeile suchen – Spalte variiert je Master (G oder F)
-  const auftragInRow = (r) => {
-    if (r < 0) return "";
-    for (let c = range.s.c; c <= range.e.c; c++) { const v = cs(r, c); if (/^\d+\.\d+[a-z]?$/i.test(v)) return v; }
-    return "";
-  };
-  // Erste Themen-Titelzeile in [from,to): Spalte B gefüllt und keine Strukturzeile
-  const titleRow = (from, to) => { for (let r = from; r < to; r++) { const b = cs(r, B); if (b && !isLabel(b)) return r; } return -1; };
-  // Aktivitäten (Stichpunkte) aus Spalte C in [from,to): ohne „Lernziele", „Auftrag N"-Header und „Sie …"-Lernziele
+  if (!anchors.length) return null;   // kein Block-Label → Sondertag (bleibt „noch nicht geplant")
+  const endContent = rHA >= 0 ? rHA : range.e.r + 1;
+  // Auftrags-Nr (Muster N.M) irgendwo in der Titelzeile – Spalte variiert je Master (G oder F)
+  const auftragInRow = (r) => { if (r < 0) return ""; for (let c = range.s.c; c <= range.e.c; c++) { const v = cs(r, c); if (/^\d+\.\d+[a-z]?$/i.test(v)) return v; } return ""; };
+  // Titelzeile eines Blocks: nächste gefüllte, nicht-Struktur B-Zelle OBERHALB des Range-Labels
+  const titleRowAbove = (labelR) => { for (let r = labelR - 1; r >= range.s.r; r--) { const b = cs(r, B); if (b && !isLabelB(b)) return r; } return -1; };
+  // Stichpunkte aus Spalte C ab dem Range-Label bis „Lernziele" (bzw. nächster Anker)
   const activities = (from, to) => {
     const out = [];
     for (let r = from; r < to; r++) {
       const c = cs(r, C); if (!c) continue;
-      if (/^Lernziele$/i.test(c)) continue;
-      if (/^Auftrag\s*[\d.\/\s]+$/i.test(c)) continue;
+      if (/^Lernziele$/i.test(c)) break;                 // Lernziele beenden den Block-Inhalt
+      if (/^Auftrag\s*[\d.\/\s]+$/i.test(c)) continue;    // „Auftrag 1"-Zwischenüberschrift
       const v = cleanBullet(c);
       if (!v || /^Sie\b/i.test(v)) continue;
       out.push(v);
     }
     return out;
   };
-  const tr1 = titleRow(range.s.r, morningEnd);
-  const tr2 = titleRow(afternoonStart, afternoonEnd);
-  if (tr1 < 0 && tr2 < 0) return null;
-  const bul1 = activities(range.s.r, morningEnd);
-  const bul2 = activities(afternoonStart, afternoonEnd);
   const lektionen = [0, 1, 2, 3, 4].map(() => ({ thema: "", notizen: "" }));
   const fill = (bullets, slots) => {
+    if (!slots.length) return;
     bullets.forEach((b, i) => {
       if (i < slots.length - 1) lektionen[slots[i]].thema = b;
       else {
@@ -626,22 +621,55 @@ function parseCompactSheet(XLSX, ws, range, cs) {
       }
     });
   };
-  fill(bul1, [0, 1, 2]);
-  fill(bul2, [3, 4]);
+  const bloecke = [];
+  anchors.forEach((a, i) => {
+    const to = i + 1 < anchors.length ? anchors[i + 1].r : endContent;
+    const bullets = activities(a.r, to);
+    const tr = titleRowAbove(a.r);
+    const von = Math.min(Math.max(1, a.von), 5);
+    const bis = Math.min(Math.max(von, a.bis), 5);
+    const slots = []; for (let L = von; L <= bis; L++) slots.push(L - 1);
+    fill(bullets, slots);
+    bloecke.push({ titel: tr >= 0 ? cs(tr, B) : "", auftrag: auftragInRow(tr), von, bis, inhalt: bullets.join("\n") });
+  });
+  // Hausaufgaben: Spalte B unter „Hausaufgaben" (Spalte E „Administratives" ignorieren)
   let haNext = "";
-  if (rHA >= 0) {
-    for (let r = rHA; r <= range.e.r; r++) {
-      [E, F, G].forEach((col) => { const v = cs(r, col); if (v && !/Administratives/i.test(v)) haNext += (haNext ? " " : "") + v; });
+  if (rHA >= 0) { for (let r = rHA + 1; r <= range.e.r; r++) { const b = cs(r, B); if (b && !/Administratives/i.test(b)) haNext += (haNext ? "\n" : "") + b; } }
+
+  // Zell-Füllfarbe + Hyperlink lesen (für grüne Prüfungen und Zusatzmaterial-Links)
+  const fillRgb = (r, c) => { const cell = ws[XLSX.utils.encode_cell({ r, c })]; const fg = cell && cell.s && cell.s.fgColor; return fg && fg.rgb ? String(fg.rgb).slice(-6).toUpperCase() : null; };
+  const isGreen = (hex) => { if (!hex) return false; const R = parseInt(hex.slice(0, 2), 16), G = parseInt(hex.slice(2, 4), 16), Bl = parseInt(hex.slice(4, 6), 16); return (G - R) >= 15 && (G - Bl) >= 30; };
+  const linkOf = (r, c) => { const cell = ws[XLSX.utils.encode_cell({ r, c })]; if (cell && cell.l && cell.l.Target) return cell.l.Target; const v = cell && cell.v; return (typeof v === "string" && /^https?:\/\//i.test(v)) ? v : null; };
+
+  // Prüfung = grün hinterlegte Zelle mit Text „Prüfung" (Auftrags-Nr aus dem Text)
+  let pruefung = null;
+  for (let r = range.s.r; r <= range.e.r && !pruefung; r++) {
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const v = cs(r, c);
+      if (v && /prüfung/i.test(v) && isGreen(fillRgb(r, c))) { pruefung = { titel: v, auftrag: pruefAuftragNr(v) }; break; }
     }
   }
+
+  // Zusatzmaterial: Label „Administratives"/„Zusatzmaterial" in Spalte E; darunter je Zeile F=Bezeichnung, G=Hyperlink
+  const zusatz = [];
+  let rZ = -1;
+  for (let r = range.s.r; r <= range.e.r; r++) { if (/Administrativ|Zusatzmaterial/i.test(cs(r, 4))) { rZ = r; break; } }
+  if (rZ >= 0) {
+    for (let r = rZ + 1; r <= range.e.r; r++) {
+      const url = linkOf(r, 6) || linkOf(r, 5);
+      if (!url) continue;
+      const label = cs(r, 5) || cs(r, 4) || "Zusatzmaterial";
+      zusatz.push({ label: label === "Link" ? "Zusatzmaterial" : label, url });
+    }
+  }
+
   return {
-    bloecke: [
-      { titel: tr1 >= 0 ? cs(tr1, B) : "", auftrag: auftragInRow(tr1) },
-      { titel: tr2 >= 0 ? cs(tr2, B) : "", auftrag: auftragInRow(tr2) },
-    ],
+    bloecke,
     lektionen,
     hausaufgabenFaellig: { text: "", fotos: [] },
     hausaufgabenNaechste: { text: haNext, fotos: [] },
+    zusatz,
+    ...(pruefung ? { pruefung } : {}),
   };
 }
 
@@ -671,7 +699,7 @@ async function ensureMaster(file, force) {
     if (!res.ok) { state.tpMaster[file] = null; return null; }
     const buf = await res.arrayBuffer();
     const XLSX = await loadSheetJs();
-    const parsed = parseMasterWorkbook(XLSX, XLSX.read(buf, { type: "array" }));
+    const parsed = parseMasterWorkbook(XLSX, XLSX.read(buf, { type: "array", cellStyles: true }));
     state.tpMaster[file] = parsed;
     try { const c = JSON.parse(localStorage.getItem(MASTER_CACHE_KEY) || "{}"); c[file] = parsed; localStorage.setItem(MASTER_CACHE_KEY, JSON.stringify(c)); } catch {}
     return parsed;
@@ -831,6 +859,16 @@ function buildPruefungVorabHtml(klasseId, days, idx) {
   const dStr = `${weekdayKurz(isoWeekday(d))} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
   return `<div class="tp-pruef-vorab">${icoZiel}<span><strong>${escapeHtml(up.pruefung.titel)}</strong> am ${dStr}</span>${_lzLink(up.pruefung.auftrag)}</div>`;
 }
+// Vorab-Zeile für die UNTERE Hausaufgaben-Box (2 Wochen vor der Prüfung): Lernziele der Prüfung
+function buildVorabInline(up) {
+  const d = parseISO(up.datum);
+  const dStr = `${weekdayKurz(isoWeekday(d))} ${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
+  const pdf = up.pruefung.auftrag ? lernzielePdf(up.pruefung.auftrag) : null;
+  const ico = pdf
+    ? `<a class="lz-icon-link" href="${escapeHtml(pdf)}" target="_blank" rel="noopener" title="Lernziele zur Prüfung ${escapeHtml(up.pruefung.auftrag)} öffnen">${icoZiel}</a>`
+    : icoZiel;
+  return `<p class="ha-pruef ha-pruef-vorab"><strong>Prüfung am ${dStr}</strong> · Lernziele ${ico}</p>`;
+}
 
 // kleine Inline-Icons
 const icoMat = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 9h16" stroke="currentColor" stroke-width="1.8"/></svg>`;
@@ -849,19 +887,40 @@ function buildLektionenHtml(content, halbtag) {
   const lekt = (content && content.lektionen) || [];
   const bloecke = (content && content.bloecke) || [];
   const zeiten = LEKTIONSZEITEN[halbtag] || LEKTIONSZEITEN.Nachmittag;
+  const dpAuftrag = (detectSchooldayPruefung(content) || {}).auftrag || "";
   const row = (i) => {
     const l = lekt[i];
     const thema = l && l.thema ? l.thema.trim() : "";
     const notiz = thema ? (l.notizen || "").trim() : "";
     const notizHtml = notiz ? `<p class="lektion-notizen">${escapeHtml(notiz)}</p>` : "";
-    return `<div class="lektion-row ${thema ? "" : "is-empty"}">
+    // Prüfung direkt in der Lektion markieren (grün + Ziel-Icon mit Lernziel-Link)
+    const isPruef = thema && isPruefungPhrase(thema);
+    let pruefIco = "";
+    if (isPruef) {
+      const nr = pruefAuftragNr(thema) || dpAuftrag;
+      const pdf = nr ? lernzielePdf(nr) : null;
+      pruefIco = pdf
+        ? ` <a class="lz-icon-link" href="${escapeHtml(pdf)}" target="_blank" rel="noopener" title="Lernziele zur Prüfung ${escapeHtml(nr)} öffnen">${icoZiel}</a>`
+        : ` ${icoZiel}`;
+    }
+    return `<div class="lektion-row ${thema ? "" : "is-empty"}${isPruef ? " is-pruef" : ""}">
       <span class="lektion-zeit">${zeiten[i]}</span>
-      <div class="lektion-row-body"><h3 class="lektion-thema">${escapeHtml(thema || "Noch offen")}</h3>${notizHtml}</div>
+      <div class="lektion-row-body"><h3 class="lektion-thema">${escapeHtml(thema || "Noch offen")}${pruefIco}</h3>${notizHtml}</div>
     </div>`;
   };
+  // Lektionsbereich eines Blocks (von/bis). Default für Altdaten ohne Angabe: Block 1 = 1–3, Block 2 = 4–5.
+  const blockRange = (blk, idx) => {
+    let von = Number(blk && blk.von), bis = Number(blk && blk.bis);
+    if (!von || !bis) { if (idx === 0) { von = 1; bis = 3; } else { von = 4; bis = 5; } }
+    von = Math.min(Math.max(1, von), 5); bis = Math.min(Math.max(von, bis), 5);
+    const slots = []; for (let L = von; L <= bis; L++) slots.push(L - 1);
+    const label = von === bis ? `Lektion ${von}` : `Lektion ${von}–${bis}`;
+    return { slots, label, von, bis };
+  };
   // Block-Kopf: Gruppenlabel + Titel + Auftrags-Nummer (öffnet direkt das sanitaerlernen-PDF), dezent getönt
-  const blockHtml = (idx, range, label) => {
-    const blk = bloecke[idx] || {};
+  const blockHtml = (idx, blk) => {
+    blk = blk || {};
+    const { slots, label } = blockRange(blk, idx);
     const farbe = blk.auftrag ? auftragFarbe(blk.auftrag) : null;
     const style = farbe ? ` style="--blk:${farbe}; --blk-bg:${hexToRgba(farbe, 0.055)}; --blk-bd:${hexToRgba(farbe, 0.28)}"` : "";
     const a = blk.auftrag ? aufById(blk.auftrag) : null;
@@ -880,23 +939,31 @@ function buildLektionenHtml(content, halbtag) {
     // Ausklappbare Lernziele des Block-Auftrags (im Block, nicht mehr oben gesammelt)
     const ziele = a ? (a.lernziele || []).filter(Boolean) : [];
     const lzHtml = ziele.length ? `
-      <button type="button" class="lz-btn lz-btn-inline" data-lz="${idx}" aria-expanded="false">${icoZiel}<span>Lernziele ${escapeHtml(blk.auftrag)}</span><svg class="lz-btn-chev" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="lz-btn lz-btn-inline" data-lz="${idx}" aria-expanded="false"><span>LZ-Auftrag ${escapeHtml(blk.auftrag)}</span><svg class="lz-btn-chev" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="lz-panel" data-lz="${idx}" hidden><ul class="lz-list2">${ziele.map((z) => `<li>${escapeHtml(z)}</li>`).join("")}</ul></div>` : "";
-    return `<div class="lektion-block ${farbe ? "has-blk" : ""}"${style}>${head}${range.map(row).join("")}${lzHtml}</div>`;
+    return `<div class="lektion-block ${farbe ? "has-blk" : ""}"${style}>${head}${slots.map(row).join("")}${lzHtml}</div>`;
   };
   const pause = PAUSENZEIT[halbtag] || PAUSENZEIT.Nachmittag;
-  return `<div class="lektion-blocks">
-    ${blockHtml(0, [0, 1, 2], "Lektion 1–3")}
-    <div class="lektion-pause"><span>Pause · ${pause}</span></div>
-    ${blockHtml(1, [3, 4], "Lektion 4–5")}
-  </div>`;
+  const list = bloecke.length ? bloecke : [{}, {}];
+  // Grosse Pause nur beim Standard-Schnitt (Block 1 endet bei Lektion 3, Block 2 beginnt bei 4)
+  const r0 = blockRange(list[0] || {}, 0);
+  const r1 = list[1] ? blockRange(list[1], 1) : null;
+  const showPause = !!(r1 && r0.bis === 3 && r1.von === 4);
+  const parts = list.map((blk, idx) => blockHtml(idx, blk));
+  let inner = parts[0] || "";
+  if (parts.length > 1) {
+    if (showPause) inner += `<div class="lektion-pause"><span>Pause · ${pause}</span></div>`;
+    inner += parts.slice(1).join("");
+  }
+  return `<div class="lektion-blocks">${inner}</div>`;
 }
 
 
+const icoZusatz = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 5h11l5 5v9H4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M15 5v5h5M8 13h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>`;
 function buildExtrasHtml(content) {
   if (!content) return "";
   let html = "";
-  // Lernaufträge stehen jetzt direkt in den Block-Köpfen – hier nur noch Zusatzmaterial/Links.
+  // Eigene Weblinks/PDFs der Lehrperson
   const pdfs = (content.pdfs || []).filter((l) => l && l.url);
   const links = (content.links || []).filter((l) => l && l.url);
   if (pdfs.length || links.length) {
@@ -904,7 +971,16 @@ function buildExtrasHtml(content) {
       ...pdfs.map((l) => `<a class="tp-link-chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${icoPdf}${escapeHtml(l.label || l.url)}</a>`),
       ...links.map((l) => `<a class="tp-link-chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${icoLink}${escapeHtml(l.label || l.url)}</a>`),
     ].join("");
-    html += `<div class="tp-section-label"><h2>Zusatzmaterial &amp; Links</h2></div><div class="tp-chiprow">${chips}</div>`;
+    html += `<div class="tp-section-label"><h2>Weblinks &amp; PDFs</h2></div><div class="tp-chiprow">${chips}</div>`;
+  }
+  // Zusatzmaterial (aus dem Excel-Master / Editor) – als aufklappbarer Button
+  const zusatz = (content.zusatz || []).filter((z) => z && z.url);
+  if (zusatz.length) {
+    const items = zusatz.map((z) => `<a class="tp-link-chip" href="${escapeHtml(z.url)}" target="_blank" rel="noopener">${icoLink}${escapeHtml(z.label || z.url)}</a>`).join("");
+    html += `<details class="tp-zusatz">
+      <summary class="tp-zusatz-sum">${icoZusatz}<span>Zusatzmaterial</span><span class="tp-zusatz-count">${zusatz.length}</span><svg class="tp-zusatz-chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+      <div class="tp-chiprow tp-zusatz-list">${items}</div>
+    </details>`;
   }
   return html;
 }
@@ -913,20 +989,28 @@ const icoHwDue = `<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="t
 const icoHwNext = `<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // Hausaufgaben-Box (fällig auf diesen Schultag / auf nächste Woche)
-function buildHausaufgabenHtml(hw, kind, pruefDateISO) {
-  if (!hw) return "";
+// extraHtml: Prüfungs-Vorab-Hinweis (unten „Lernziele", oben „Lernen für Prüfung")
+function buildHausaufgabenHtml(hw, kind, pruefDateISO, extraHtml) {
+  hw = hw || { text: "", fotos: [] };
   const text = (hw.text || "").trim();
   const fotos = (hw.fotos || []).filter(Boolean);
-  if (!text && !fotos.length) return "";
+  extraHtml = extraHtml || "";
+  if (!text && !fotos.length && !extraHtml) return "";
   const isNext = kind === "naechste";
   const label = isNext ? "Hausaufgaben auf nächste Woche" : "Hausaufgaben auf diesen Schultag";
   const fotoHtml = fotos.length
     ? `<div class="ha-fotos">${fotos.map((f) => { const url = f.url || f; const cap = f.label || "Foto"; return `<a class="ha-foto" href="${escapeHtml(url)}" target="_blank" rel="noopener"><img src="${escapeHtml(url)}" alt="${escapeHtml(cap)}" loading="lazy"></a>`; }).join("")}</div>`
     : "";
+  // Jede Zeile = eine Hausaufgabe (mit Punkt davor). Eine einzelne Zeile zeigt nur einen Punkt.
+  const items = text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+  const listHtml = items.length
+    ? `<ul class="ha-list">${items.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`
+    : "";
   return `<div class="ha-box ha-${kind}">
     <div class="ha-head">${isNext ? icoHwNext : icoHwDue}<span>${label}</span></div>
-    ${text ? `<p class="ha-text">${escapeHtml(text)}</p>` : ""}
+    ${listHtml}
     ${buildHwPruefCta(text, pruefDateISO)}
+    ${extraHtml}
     ${fotoHtml}
   </div>`;
 }
@@ -1098,15 +1182,18 @@ function renderTagesprogramm(params) {
       </div>`;
       body += buildExtrasHtml(content) + fotoHtml;
     } else {
-      body = buildPruefungHeuteHtml(content) + buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig", days[idx]);
+      // Prüfung in den nächsten 2 Wochen? → nur unten (Hausaufgaben nächste Woche) die Lernziele,
+      // ohne farbliche Markierung. Die Prüfung selbst wird direkt im Lektionsblock hervorgehoben.
+      const up = naechstePruefung(klasseId, days, idx, 14);
+      const naechsteExtra = up ? buildVorabInline(up) : "";
+      body = buildHausaufgabenHtml(content && content.hausaufgabenFaellig, "faellig", days[idx]);
       body += `<div class="tp-dc-label">Schultag-Ablauf</div>${buildLektionenHtml(content, klasse.halbtag)}`;
       if (!hasContent) {
         body += `<div class="tp-empty tp-empty-inline"><svg viewBox="0 0 24 24" width="32" height="32"><path d="M4 20h4l10-10-4-4L4 16v4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg><h3>Dieser Schultag ist noch nicht geplant</h3></div>`;
       } else {
         body += buildExtrasHtml(content);
       }
-      body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste", days[idx + 1]);
-      body += buildPruefungVorabHtml(klasseId, days, idx);
+      body += buildHausaufgabenHtml(content && content.hausaufgabenNaechste, "naechste", days[idx + 1], naechsteExtra);
     }
     dayHost.innerHTML = `<article class="tp-daycard">${head}<div class="tp-dc-body">${body}</div></article>`;
     // Lernziele aus-/einklappen (runde Buttons)
@@ -1396,7 +1483,12 @@ function renderEditorUI(v) {
         </div>
       </div>
 
-      <p class="editor2-intro">So gehst du vor: <strong>1.</strong> oben <strong>Klasse</strong> &amp; <strong>Schultag</strong> wählen → <strong>2.</strong> unten anpassen (Titel, Lektionen, Hausaufgaben, Links/Bilder) → <strong>3.</strong> <strong>Speichern</strong>. Was du nicht änderst, kommt automatisch aus dem Excel-Masterplan. Fällt ein Tag aus, oben das Häkchen setzen und ein Alternativprogramm eintragen.</p>
+      <ol class="ed-steps">
+        <li><span class="ed-step-n">1</span><div class="ed-step-tx"><strong>Klasse &amp; Schultag wählen</strong><span>oben in den beiden Feldern</span></div></li>
+        <li><span class="ed-step-n">2</span><div class="ed-step-tx"><strong>Inhalte anpassen</strong><span>Titel, Lektionen, Hausaufgaben, Links/Bilder</span></div></li>
+        <li><span class="ed-step-n">3</span><div class="ed-step-tx"><strong>Speichern</strong><span>grüner Button ganz unten</span></div></li>
+      </ol>
+      <p class="ed-steps-note"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 11v5M12 7.6v.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg> <span>Was du <strong>nicht</strong> änderst, kommt automatisch aus dem Excel-Masterplan. Fällt ein Tag aus: oben das Häkchen „fällt aus" setzen und ein Alternativprogramm eintragen.</span></p>
 
       <div id="ed-form"></div>
 
@@ -1417,14 +1509,21 @@ function renderEditorUI(v) {
   const masterBtn = $("#ed-master-refresh");
   if (masterBtn) masterBtn.addEventListener("click", async () => {
     const kl = klasseById($("#ed-klasse").value);
-    if (!kl) return;
-    const file = klasseMasterFile(kl);
+    const file = kl ? klasseMasterFile(kl) : null;
+    const choice = await chooseMasterRefresh(file);
+    if (!choice) return;
+    const files = choice === "all"
+      ? [...new Set(allKlassen().map((k) => klasseMasterFile(k)).filter(Boolean))]
+      : [file];
     const prev = masterBtn.textContent; masterBtn.disabled = true; masterBtn.textContent = "Lädt …";
-    const parsed = await masterRefresh(file);
+    let ok = 0, total = 0, fehlt = [];
+    for (const f of files) {
+      const parsed = await masterRefresh(f);
+      if (parsed && parsed.bySt) { ok++; total += Object.keys(parsed.bySt).length; } else fehlt.push(f);
+    }
     masterBtn.disabled = false; masterBtn.textContent = prev;
-    const n = parsed && parsed.bySt ? Object.keys(parsed.bySt).length : 0;
-    if (n) { alert(`Masterplan «${file}» neu geladen: ${n} Schultage übernommen.`); drawEditorForm($("#ed-klasse").value, tagSelect.value); }
-    else alert(`Kein Masterplan «${file}» gefunden (erwartet unter data/master/).`);
+    alert(`${ok}/${files.length} Masterpläne neu geladen (${total} Schultage).${fehlt.length ? "\n\nNicht gefunden: " + fehlt.join(", ") : ""}`);
+    drawEditorForm($("#ed-klasse").value, tagSelect.value);
   });
 
   // Teams-Link kopieren (pro Klasse) – mit Fallback für ältere Browser
@@ -1456,20 +1555,32 @@ function renderEditorUI(v) {
     return days;
   };
 
-  let days = fillTagSelect(klasseId, "");
-  // Startdatum: gewünschtes (Deeplink) → sonst aktueller Schultag → sonst erster
-  let startDate = (wantDate && days.includes(wantDate)) ? wantDate : null;
-  if (!startDate && days.length) {
-    const p = pickCurrentSchoolday(days, todayISO());
-    startDate = days[Math.max(0, p.index)];
-  }
-  if (startDate) tagSelect.value = startDate;
+  (async () => {
+    await ensureMaster(klasseMasterFile(klasseById(klasseId)));   // Master der bearbeiteten Klasse zuerst laden
+    const days = fillTagSelect(klasseId, "");
+    // Startdatum: gewünschtes (Deeplink) → sonst aktueller Schultag → sonst erster
+    let startDate = (wantDate && days.includes(wantDate)) ? wantDate : null;
+    if (!startDate && days.length) {
+      const p = pickCurrentSchoolday(days, todayISO());
+      startDate = days[Math.max(0, p.index)];
+    }
+    if (startDate) tagSelect.value = startDate;
+    drawEditorForm(klasseId, startDate);
+  })();
 
-  drawEditorForm(klasseId, startDate);
-
-  $("#ed-klasse").addEventListener("change", (e) => {
-    klasseId = e.target.value;
+  $("#ed-klasse").addEventListener("change", async (e) => {
+    const newId = e.target.value, prevId = klasseId;
+    if (newId === prevId) return;
+    // Sicherheits-Rückfrage, damit nicht versehentlich die falsche Klasse bearbeitet wird
+    if (sessionStorage.getItem("sanigbs:ed-klasse-noask") !== todayISO()) {
+      const kl = klasseById(newId);
+      const res = await confirmWithOption(`Wirklich zur Klasse «${newId}»${kl ? ` – ${kl.beruf}` : ""} wechseln?`, "Ja, wechseln");
+      if (!res.ok) { e.target.value = prevId; return; }
+      if (res.dontAsk) { try { sessionStorage.setItem("sanigbs:ed-klasse-noask", todayISO()); } catch {} }
+    }
+    klasseId = newId;
     setActiveKlasse(klasseId);
+    await ensureMaster(klasseMasterFile(klasseById(klasseId)));
     const d2 = fillTagSelect(klasseId, "");
     const nd = d2.length ? d2[Math.max(0, pickCurrentSchoolday(d2, todayISO()).index)] : null;
     if (nd) tagSelect.value = nd;
@@ -1496,10 +1607,12 @@ function renderEditorUI(v) {
 }
 
 // Formular für einen konkreten Schultag zeichnen
-function drawEditorForm(klasseId, dateISO) {
+async function drawEditorForm(klasseId, dateISO) {
   const host = $("#ed-form");
   if (!host) return;
   if (!dateISO) { host.innerHTML = `<div class="tp-empty"><h3>Kein Schultag</h3><p>Für diese Klasse sind keine Schultage berechnet.</p></div>`; return; }
+  const klasse = klasseById(klasseId);
+  await ensureMaster(klasseMasterFile(klasse));   // Master DIESER Klasse laden, bevor die Inhalte gelesen werden
 
   const base = schooldayContent(klasseId, dateISO);
   const c = base ? JSON.parse(JSON.stringify(base)) : blankSchoolday();
@@ -1509,6 +1622,7 @@ function drawEditorForm(klasseId, dateISO) {
   c.hausaufgabenFaellig = c.hausaufgabenFaellig || { text: "", fotos: [] };
   c.hausaufgabenNaechste = c.hausaufgabenNaechste || { text: "", fotos: [] };
   c.pruefung = c.pruefung || { titel: "", auftrag: "" };
+  c.zusatz = Array.isArray(c.zusatz) ? c.zusatz : [];
 
   // Fotos werden live in diesem Objekt gehalten (Texte erst beim Speichern gelesen)
   const photos = {
@@ -1518,10 +1632,20 @@ function drawEditorForm(klasseId, dateISO) {
   };
 
   const dt = parseISO(dateISO);
-  const klasse = klasseById(klasseId);
   const zeiten = LEKTIONSZEITEN[klasse.halbtag] || LEKTIONSZEITEN.Nachmittag;
-  c.bloecke = c.bloecke || [];
-  while (c.bloecke.length < 2) c.bloecke.push({ titel: "", auftrag: "" });
+  c.bloecke = (c.bloecke && c.bloecke.length) ? c.bloecke : [{}, {}];
+  // Blöcke mit Lektionsbereich (von/bis) – aus dem Master übernommen, sonst Standard 1–3 / 4–5.
+  const blocksMeta = c.bloecke.map((b, idx) => {
+    let von = Number(b.von), bis = Number(b.bis);
+    if (!von || !bis) { if (idx === 0) { von = 1; bis = 3; } else { von = 4; bis = 5; } }
+    von = Math.min(Math.max(1, von), 5); bis = Math.min(Math.max(von, bis), 5);
+    const slots = []; for (let L = von; L <= bis; L++) slots.push(L - 1);
+    let inhalt = b.inhalt || "";
+    if (!inhalt) inhalt = slots.map((s) => (c.lektionen[s] || {}).thema || "").filter(Boolean).join("\n");
+    return { idx, von, bis, slots, titel: b.titel || "", auftrag: b.auftrag || "", inhalt };
+  });
+  // Keine Lektion doppelt (schützt vor überlappenden Bereichen aus Excel-Tippfehlern → sonst doppelte IDs)
+  { const used = new Set(); blocksMeta.forEach((bm) => { bm.slots = bm.slots.filter((s) => !used.has(s)); bm.slots.forEach((s) => used.add(s)); }); }
 
   const lektField = (i) => {
     const l = c.lektionen[i] || {};
@@ -1540,15 +1664,42 @@ function drawEditorForm(klasseId, dateISO) {
       </div>
     </div>`;
   };
-  const blockGroup = (k, range, label) => {
-    const b = c.bloecke[k] || {};
-    return `<div class="ed-block ed-blockgroup">
-      <div class="ed-blk-head">
-        <span class="ed-blk-label">${label}</span>
-        <input class="ed-input ed-blk-titel" id="ed-blk${k}-titel" type="text" placeholder="Titel (z. B. Trinkwasser – Eigenschaften & Gewinnung)" value="${escapeHtml(b.titel || "")}">
-        <input class="ed-input ed-blk-auf" id="ed-blk${k}-auf" type="text" placeholder="Auftrag-Nr (z. B. 1.4)" value="${escapeHtml(b.auftrag || "")}">
+  // Block-zentriert: Titel + Auftrag-Nr + EIN Stichpunkt-Feld (eine Zeile = ein Punkt),
+  // Prüfungs-Häkchen für den Block, plus Umschalter „in einzelne Lektionen aufteilen".
+  const blockGroupNew = (bm) => {
+    const k = bm.idx;
+    const label = `Block ${k + 1} · ${bm.von === bm.bis ? `Lektion ${bm.von}` : `Lektion ${bm.von}–${bm.bis}`}`;
+    const anyExplicit = bm.slots.some((s) => typeof (c.lektionen[s] || {}).pruef === "boolean");
+    const explicitPruef = bm.slots.some((s) => (c.lektionen[s] || {}).pruef);
+    const autoP = isPruefungPhrase(bm.titel) || isPruefungPhrase(bm.inhalt);
+    const pchecked = anyExplicit ? explicitPruef : autoP;
+    let pnr = "";
+    for (const s of bm.slots) { const l = c.lektionen[s] || {}; if (l.pruefNr) { pnr = l.pruefNr; break; } }
+    if (!pnr && pchecked) pnr = pruefAuftragNr(bm.titel) || pruefAuftragNr(bm.inhalt);
+    const lessonFields = bm.slots.map(lektField).join("");
+    const farbe = bm.auftrag ? auftragFarbe(bm.auftrag) : null;
+    const style = farbe ? ` style="border-left:4px solid ${farbe}; background:${hexToRgba(farbe, 0.06)}"` : "";
+    return `<div class="ed-block ed-blockgroup" data-block="${k}"${style}>
+      <div class="ed-blk-bar"><span class="ed-blk-label"${farbe ? ` style="color:${farbe}"` : ""}>${label}</span></div>
+      <div class="ed-blk-row2">
+        <div class="ed-field-grow"><label class="ed-mini" for="ed-blk${k}-titel">Titel</label><input class="ed-input" id="ed-blk${k}-titel" type="text" placeholder="z. B. Trinkwasser – Eigenschaften" value="${escapeHtml(bm.titel)}"></div>
+        <div><label class="ed-mini" for="ed-blk${k}-auf">Auftrag-Nr</label><input class="ed-input ed-blk-auf" id="ed-blk${k}-auf" type="text" placeholder="1.4" value="${escapeHtml(bm.auftrag)}"></div>
       </div>
-      <div class="ed-lekt-list">${range.map(lektField).join("")}</div>
+      <div class="ed-blk-inhaltwrap" data-block="${k}">
+        <label class="ed-mini" for="ed-blk${k}-inhalt">Inhalt <span class="ed-mini-quiet">· eine Zeile = ein Stichpunkt</span></label>
+        <textarea class="ed-input ed-blk-inhalt" id="ed-blk${k}-inhalt" rows="4" placeholder="Ein Stichpunkt pro Zeile …">${escapeHtml(bm.inhalt)}</textarea>
+        <div class="ed-lekt-pruef">
+          <label class="ed-pruef-check"><input type="checkbox" id="ed-blk${k}-pruef" ${pchecked ? "checked" : ""}> Prüfung in diesem Block</label>
+          <input class="ed-input ed-blk-auf" id="ed-blk${k}-pruefnr" type="text" placeholder="Prüfungs-Nr" value="${escapeHtml(pnr)}" ${pchecked ? "" : "disabled"}>
+        </div>
+      </div>
+      <div class="ed-blk-lessons" data-block="${k}" hidden>
+        <div class="ed-lekt-list">${lessonFields}</div>
+      </div>
+      <button type="button" class="ed-blk-toggle" data-block="${k}" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="ed-blk-toggle-tx">In einzelne Lektionen aufteilen</span>
+      </button>
     </div>`;
   };
 
@@ -1569,20 +1720,26 @@ function drawEditorForm(klasseId, dateISO) {
       </div>
 
       <div class="ed-normal-fields" id="ed-normal-fields" ${c.ausfall ? "hidden" : ""}>
-      <div class="ed-block ha-edit ha-faellig">
-        <label class="ed-label" for="ed-ha-f">Hausaufgaben auf diesen Schultag</label>
-        <textarea class="ed-input" id="ed-ha-f" rows="2" placeholder="Was war auf heute zu erledigen?">${escapeHtml(c.hausaufgabenFaellig.text || "")}</textarea>
+      <details class="ed-block ha-edit ha-faellig ed-collapse">
+        <summary class="ed-collapse-sum">Hausaufgaben auf diesen Schultag <span class="ed-collapse-hint">– aufklappen</span></summary>
+        <textarea class="ed-input" id="ed-ha-f" rows="2" placeholder="Eine Hausaufgabe pro Zeile …">${escapeHtml(c.hausaufgabenFaellig.text || "")}</textarea>
+        <p class="ed-hint" style="margin:2px 0 0">Tipp: <strong>eine Hausaufgabe pro Zeile</strong> – jede Zeile erscheint mit einem Punkt davor.</p>
         <div class="ed-fotos" data-kind="faellig"></div>
         <div class="ed-foto-actions">
           <label class="btn btn-ghost btn-sm">📷 Foto (PC)<input type="file" accept="image/*" multiple hidden data-foto="faellig"></label>
           <button type="button" class="btn btn-ghost btn-sm" data-qr="faellig">Per Handy (QR)</button>
         </div>
+      </details>
+
+      <div class="ed-main-grid">
+      <div class="ed-col-blocks">
+      <p class="ed-hint" style="margin:0 0 8px">Pro Block: <strong>Titel</strong>, <strong>Auftrags-Nr</strong> (verlinkt aufs PDF, färbt den Block) und die <strong>Stichpunkte</strong> (eine Zeile = ein Punkt). Brauchst du es genauer, kannst du einen Block „in einzelne Lektionen aufteilen".</p>
+      <div class="ed-blocks-grid">
+        ${blocksMeta.map(blockGroupNew).join("")}
       </div>
+      </div><!-- /ed-col-blocks -->
 
-      <p class="ed-hint" style="margin:0">Jeder Block hat einen Titel und eine Auftrags-Nummer. Die Auftragsfarbe tönt den Block; die Nummer verlinkt aufs Auftrags-PDF.</p>
-      ${blockGroup(0, [0, 1, 2], "Block 1 · Lektion 1–3")}
-      ${blockGroup(1, [3, 4], "Block 2 · Lektion 4–5")}
-
+      <div class="ed-col-side">
       <div class="ed-block">
         <label class="ed-label">Weblinks &amp; PDFs</label>
         <div class="ed-links" id="ed-links">${([...(c.pdfs || []), ...(c.links || [])].filter((l) => l && l.url).map((l) => linkRowHtml(l.label, l.url)).join("")) || linkRowHtml("", "")}</div>
@@ -1590,9 +1747,19 @@ function drawEditorForm(klasseId, dateISO) {
         <p class="ed-hint">Links: die <strong>Beschriftung</strong> ist das Wort, das verlinkt angezeigt wird; die <strong>URL</strong> ist das Ziel. Endet die Adresse auf <code>.pdf</code>, wird sie als PDF erkannt.</p>
       </div>
 
+      <div class="ed-block">
+        <label class="ed-label">Zusatzmaterial</label>
+        <div class="ed-links" id="ed-zusatz-links">${((c.zusatz || []).filter((z) => z && z.url).map((z) => linkRowHtml(z.label, z.url)).join("")) || linkRowHtml("", "")}</div>
+        <button type="button" class="btn btn-ghost btn-sm" id="ed-zusatz-add">+ Zusatzmaterial hinzufügen</button>
+        <p class="ed-hint">Erscheint im Schultag als aufklappbarer <strong>Zusatzmaterial</strong>-Button (Bezeichnung + Link). Kommt automatisch aus dem Excel-Master, hier ergänzbar.</p>
+      </div>
+      </div><!-- /ed-col-side -->
+      </div><!-- /ed-main-grid -->
+
       <div class="ed-block ha-edit ha-naechste">
         <label class="ed-label" for="ed-ha-n">Hausaufgaben auf nächste Woche</label>
-        <textarea class="ed-input" id="ed-ha-n" rows="2" placeholder="Was ist auf nächste Woche zu erledigen?">${escapeHtml(c.hausaufgabenNaechste.text || "")}</textarea>
+        <textarea class="ed-input" id="ed-ha-n" rows="2" placeholder="Eine Hausaufgabe pro Zeile …">${escapeHtml(c.hausaufgabenNaechste.text || "")}</textarea>
+        <p class="ed-hint" style="margin:2px 0 0">Tipp: <strong>eine Hausaufgabe pro Zeile</strong> – jede Zeile erscheint mit einem Punkt davor.</p>
         <div class="ed-fotos" data-kind="naechste"></div>
         <div class="ed-foto-actions">
           <label class="btn btn-ghost btn-sm">📷 Foto (PC)<input type="file" accept="image/*" multiple hidden data-foto="naechste"></label>
@@ -1658,13 +1825,15 @@ function drawEditorForm(klasseId, dateISO) {
     const ldel = e.target.closest(".ed-link-del");
     if (ldel) { ldel.closest(".ed-link-row").remove(); }
   });
-  // Link-Zeile hinzufügen
-  const linkAdd = host.querySelector("#ed-link-add");
-  if (linkAdd) linkAdd.addEventListener("click", () => {
-    const wrap = host.querySelector("#ed-links");
-    wrap.insertAdjacentHTML("beforeend", linkRowHtml("", ""));
-    const last = wrap.querySelector(".ed-link-row:last-child .ed-link-label");
-    if (last) last.focus();
+  // Link-Zeile hinzufügen (Weblinks + Zusatzmaterial)
+  [["#ed-link-add", "#ed-links"], ["#ed-zusatz-add", "#ed-zusatz-links"]].forEach(([btnSel, wrapSel]) => {
+    const btn = host.querySelector(btnSel);
+    if (btn) btn.addEventListener("click", () => {
+      const wrap = host.querySelector(wrapSel);
+      wrap.insertAdjacentHTML("beforeend", linkRowHtml("", ""));
+      const last = wrap.querySelector(".ed-link-row:last-child .ed-link-label");
+      if (last) last.focus();
+    });
   });
   // QR (Handy)
   host.querySelectorAll("button[data-qr]").forEach((btn) => {
@@ -1684,6 +1853,46 @@ function drawEditorForm(klasseId, dateISO) {
     });
   }
 
+  // Umschalter „in einzelne Lektionen aufteilen" pro Block
+  const distributeToLessonFields = (slots, bullets) => {
+    slots.forEach((s) => { const t = host.querySelector(`#lk-thema-${s}`); const n = host.querySelector(`#lk-notiz-${s}`); if (t) t.value = ""; if (n) n.value = ""; });
+    bullets.forEach((b, i) => {
+      if (i < slots.length - 1) { const t = host.querySelector(`#lk-thema-${slots[i]}`); if (t) t.value = b; }
+      else { const last = slots[slots.length - 1]; const t = host.querySelector(`#lk-thema-${last}`); const n = host.querySelector(`#lk-notiz-${last}`); if (t && !t.value) t.value = b; else if (n) n.value = (n.value ? n.value + " · " : "") + b; }
+    });
+  };
+  host.querySelectorAll(".ed-blk-toggle").forEach((btn) => {
+    const k = btn.dataset.block;
+    const bm = blocksMeta[Number(k)];
+    const inhaltWrap = host.querySelector(`.ed-blk-inhaltwrap[data-block="${k}"]`);
+    const lessonsWrap = host.querySelector(`.ed-blk-lessons[data-block="${k}"]`);
+    const txt = btn.querySelector(".ed-blk-toggle-tx");
+    btn.addEventListener("click", () => {
+      if (lessonsWrap.hidden) {
+        const bullets = (host.querySelector(`#ed-blk${k}-inhalt`).value || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+        distributeToLessonFields(bm.slots, bullets);
+        inhaltWrap.hidden = true; lessonsWrap.hidden = false;
+        btn.setAttribute("aria-expanded", "true"); if (txt) txt.textContent = "Als Block-Stichpunkte zusammenfassen";
+      } else {
+        const lines = bm.slots.map((s) => { const t = (host.querySelector(`#lk-thema-${s}`).value || "").trim(); const n = (host.querySelector(`#lk-notiz-${s}`).value || "").trim(); return [t, n].filter(Boolean).join(" · "); }).filter(Boolean);
+        host.querySelector(`#ed-blk${k}-inhalt`).value = lines.join("\n");
+        inhaltWrap.hidden = false; lessonsWrap.hidden = true;
+        btn.setAttribute("aria-expanded", "false"); if (txt) txt.textContent = "In einzelne Lektionen aufteilen";
+      }
+    });
+  });
+  // Block-Prüfungs-Häkchen: Nr-Feld nur aktiv, wenn angehakt
+  blocksMeta.forEach((bm) => {
+    const k = bm.idx;
+    const chk = host.querySelector(`#ed-blk${k}-pruef`);
+    const nrEl = host.querySelector(`#ed-blk${k}-pruefnr`);
+    if (!chk || !nrEl) return;
+    chk.addEventListener("change", () => {
+      nrEl.disabled = !chk.checked;
+      if (chk.checked) { if (!nrEl.value.trim()) nrEl.value = pruefAuftragNr(host.querySelector(`#ed-blk${k}-titel`).value) || pruefAuftragNr(host.querySelector(`#ed-blk${k}-inhalt`).value); nrEl.focus(); }
+    });
+  });
+
   // Speichern
   const val = (sel) => { const e = host.querySelector(sel); return e ? e.value.trim() : ""; };
   $("#ed-day-form").addEventListener("submit", (e) => {
@@ -1702,33 +1911,65 @@ function drawEditorForm(klasseId, dateISO) {
       if (saveTpEdits(edits)) { const s = $("#ed-saved"); s.hidden = false; setTimeout(() => { s.hidden = true; }, 1800); }
       return;
     }
-    const lekt = [];
-    for (let i = 0; i < 5; i++) {
-      const pruef = !!(host.querySelector(`#lk-pruef-${i}`) || {}).checked;
-      lekt.push({ thema: val(`#lk-thema-${i}`), material: [], notizen: val(`#lk-notiz-${i}`), pruef, pruefNr: pruef ? val(`#lk-pruefnr-${i}`) : "" });
-    }
-    const bloecke = [0, 1].map((k) => ({ titel: val(`#ed-blk${k}-titel`), auftrag: val(`#ed-blk${k}-auf`) }));
-    // Links aus den Zeilen sammeln: Beschriftung + URL, .pdf wird als PDF erkannt
+    // Lektionen aus den Blöcken zusammensetzen. Je Block: Block-Modus (Stichpunkte → auf
+    // Lektionen verteilt) ODER Lektions-Modus (einzelne Felder), je nachdem was sichtbar ist.
+    const lekt = [0, 1, 2, 3, 4].map(() => ({ thema: "", material: [], notizen: "", pruef: false, pruefNr: "" }));
+    const fillLektSlots = (slots, bullets) => {
+      if (!slots.length) return;
+      bullets.forEach((b, i) => {
+        if (i < slots.length - 1) lekt[slots[i]].thema = b;
+        else { const last = slots[slots.length - 1]; if (!lekt[last].thema) lekt[last].thema = b; else lekt[last].notizen = (lekt[last].notizen ? lekt[last].notizen + " · " : "") + b; }
+      });
+    };
+    const bloecke = blocksMeta.map((bm) => {
+      const k = bm.idx;
+      const titel = val(`#ed-blk${k}-titel`), auftrag = val(`#ed-blk${k}-auf`);
+      const lessonsWrap = host.querySelector(`.ed-blk-lessons[data-block="${k}"]`);
+      const lessonMode = lessonsWrap && !lessonsWrap.hidden;
+      let inhalt = "";
+      if (lessonMode) {
+        bm.slots.forEach((s) => {
+          const pruef = !!(host.querySelector(`#lk-pruef-${s}`) || {}).checked;
+          lekt[s] = { thema: val(`#lk-thema-${s}`), material: [], notizen: val(`#lk-notiz-${s}`), pruef, pruefNr: pruef ? val(`#lk-pruefnr-${s}`) : "" };
+        });
+        inhalt = bm.slots.map((s) => lekt[s].thema).filter(Boolean).join("\n");
+      } else {
+        inhalt = val(`#ed-blk${k}-inhalt`);
+        fillLektSlots(bm.slots, inhalt.split(/\r?\n/).map((s) => s.trim()).filter(Boolean));
+        const p = !!(host.querySelector(`#ed-blk${k}-pruef`) || {}).checked;
+        if (p && bm.slots.length) { lekt[bm.slots[0]].pruef = true; lekt[bm.slots[0]].pruefNr = val(`#ed-blk${k}-pruefnr`); }
+      }
+      return { titel, auftrag, von: bm.von, bis: bm.bis, inhalt };
+    });
+    // Weblinks (nur #ed-links): Beschriftung + URL, .pdf wird als PDF erkannt
     const links = [], pdfs = [];
-    host.querySelectorAll(".ed-link-row").forEach((r) => {
+    host.querySelectorAll("#ed-links .ed-link-row").forEach((r) => {
       const url = r.querySelector(".ed-link-url").value.trim();
       if (!url) return;
       const label = r.querySelector(".ed-link-label").value.trim() || url;
       const entry = { label, url };
       if (/\.pdf(\?|#|$)/i.test(url)) pdfs.push(entry); else links.push(entry);
     });
+    // Zusatzmaterial (separat, #ed-zusatz-links)
+    const zusatz = [];
+    host.querySelectorAll("#ed-zusatz-links .ed-link-row").forEach((r) => {
+      const url = r.querySelector(".ed-link-url").value.trim();
+      if (!url) return;
+      const label = r.querySelector(".ed-link-label").value.trim() || url;
+      zusatz.push({ label, url });
+    });
     const content = {
       bloecke,
       lektionen: lekt,
-      links, pdfs,
+      links, pdfs, zusatz,
       hausaufgabenFaellig: { text: val("#ed-ha-f"), fotos: photos.faellig },
       hausaufgabenNaechste: { text: val("#ed-ha-n"), fotos: photos.naechste },
     };
     // Komplett leer (z. B. Ausfall-Häkchen entfernt, ohne eigenen Inhalt) → Overlay löschen,
     // damit wieder der Masterplan greift (statt eines leeren „noch offen"-Tags).
-    const isEmpty = !bloecke.some((b) => b.titel || b.auftrag)
+    const isEmpty = !bloecke.some((b) => b.titel || b.auftrag || (b.inhalt || "").trim())
       && !lekt.some((l) => (l.thema || "").trim() || (l.notizen || "").trim() || l.pruef)
-      && !links.length && !pdfs.length
+      && !links.length && !pdfs.length && !zusatz.length
       && !val("#ed-ha-f") && !val("#ed-ha-n");
     if (isEmpty) delete edits[tpEditKey(klasseId, dateISO)];
     else edits[tpEditKey(klasseId, dateISO)] = content;
@@ -1737,11 +1978,63 @@ function drawEditorForm(klasseId, dateISO) {
     }
   });
   $("#ed-reset").addEventListener("click", () => {
-    if (!confirm("Lokale Bearbeitung dieses Schultags verwerfen und die Basis-Inhalte laden?")) return;
+    if (!confirm("⚠ Achtung: Alle lokalen Änderungen an DIESEM Schultag werden verworfen und die Inhalte aus dem Master neu geladen.\n\nFortfahren?")) return;
+    if (!confirm("Wirklich zurücksetzen? Diese Aktion kann nicht rückgängig gemacht werden.")) return;
     const edits = loadTpEdits();
     delete edits[tpEditKey(klasseId, dateISO)];
     saveTpEdits(edits);
     drawEditorForm(klasseId, dateISO);
+  });
+}
+
+// Bestätigungs-Dialog mit optionalem „nicht mehr fragen"-Häkchen → Promise<{ok, dontAsk}>
+function confirmWithOption(message, confirmLabel = "Ja", dontAskLabel = "Für heute nicht mehr fragen") {
+  return new Promise((resolve) => {
+    const overlay = el(`
+      <div class="hk-overlay" role="dialog" aria-modal="true" aria-label="Bestätigung">
+        <div class="hk-overlay-backdrop" data-cancel></div>
+        <div class="hk-overlay-panel confirm-panel">
+          <p class="confirm-msg">${escapeHtml(message)}</p>
+          <label class="confirm-dontask"><input type="checkbox" id="confirm-dontask"> ${escapeHtml(dontAskLabel)}</label>
+          <div class="confirm-actions">
+            <button type="button" class="btn btn-ghost" data-cancel>Abbrechen</button>
+            <button type="button" class="btn btn-brand" data-ok>${escapeHtml(confirmLabel)}</button>
+          </div>
+        </div>
+      </div>`);
+    document.body.appendChild(overlay);
+    document.body.classList.add("has-overlay");
+    const done = (ok) => {
+      const da = !!(overlay.querySelector("#confirm-dontask") || {}).checked;
+      overlay.remove(); document.body.classList.remove("has-overlay"); resolve({ ok, dontAsk: da });
+    };
+    overlay.querySelectorAll("[data-cancel]").forEach((b) => b.addEventListener("click", () => done(false)));
+    overlay.querySelector("[data-ok]").addEventListener("click", () => done(true));
+  });
+}
+
+// Dialog: welchen Masterplan aus Excel neu einlesen? → Promise<'one'|'all'|null>
+function chooseMasterRefresh(currentFile) {
+  return new Promise((resolve) => {
+    const overlay = el(`
+      <div class="hk-overlay" role="dialog" aria-modal="true" aria-label="Aus Excel aktualisieren">
+        <div class="hk-overlay-backdrop" data-cancel></div>
+        <div class="hk-overlay-panel confirm-panel">
+          <p class="confirm-msg">Inhalte aus Excel neu einlesen?</p>
+          <p class="confirm-sub">Ersetzt die zwischengespeicherten Master-Inhalte durch die aktuellen Excel-Dateien (lokale Bearbeitungen bleiben erhalten).</p>
+          <div class="confirm-actions confirm-actions-col">
+            ${currentFile ? `<button type="button" class="btn btn-brand" data-one>Nur diesen: ${escapeHtml(currentFile)}</button>` : ""}
+            <button type="button" class="btn btn-primary" data-all>Alle Masterpläne aktualisieren</button>
+            <button type="button" class="btn btn-ghost" data-cancel>Abbrechen</button>
+          </div>
+        </div>
+      </div>`);
+    document.body.appendChild(overlay);
+    document.body.classList.add("has-overlay");
+    const done = (v) => { overlay.remove(); document.body.classList.remove("has-overlay"); resolve(v); };
+    overlay.querySelectorAll("[data-cancel]").forEach((b) => b.addEventListener("click", () => done(null)));
+    const one = overlay.querySelector("[data-one]"); if (one) one.addEventListener("click", () => done("one"));
+    overlay.querySelector("[data-all]").addEventListener("click", () => done("all"));
   });
 }
 
@@ -1928,6 +2221,7 @@ function updateActiveNav() {
   else if (hash.startsWith("#/klasse") || hash === "#/" || hash === "" || hash.startsWith("#/semester")) key = "tagesprogramm";
   else key = ""; // Info / Lehrer / Edit – keine Hauptkachel aktiv
   document.body.classList.toggle("page-tagesprogramm", key === "tagesprogramm");
+  document.body.classList.toggle("page-lehrer", hash.startsWith("#/lehrer"));
   $$(".sidenav a, .bottomnav a").forEach((a) => a.classList.toggle("is-active", key !== "" && a.dataset.nav === key));
   $$(".sidebar-lehrer").forEach((a) => a.classList.toggle("is-active", hash.startsWith("#/lehrer")));
 
